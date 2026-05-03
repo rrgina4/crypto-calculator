@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Profit Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Philosopher:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #23292F; 
+            overflow-x: hidden;
+            transition: background-color 0.5s ease;
+        }
+
+        .font-philosopher {
+            font-family: 'Philosopher', sans-serif;
+        }
+        
+        /* --- HARVARD UI FIX: Remove browser arrows --- */
+        input::-webkit-inner-spin-button,
+        input::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* --- OS Dropdown Visibility Fix --- */
+        select option {
+            background-color: #1f2937; /* Dark gray */
+            color: #ffffff;
+        }
+        
+        .crypto-card {
+            background-color: #e4e7ec;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .input-field {
+            background-color: #f8fafc;
+            font-size: 1.125rem !important;
+            color: #111827 !important;
+            letter-spacing: 0.025em;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .input-field:focus {
+            transform: translateY(-1px);
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .results-box {
+            background-color: rgba(255, 255, 255, 0.6);
+        }
+
+        @keyframes levitate {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.05); opacity: 0.95; }
+        }
+
+        .aura-circle {
+            transform-origin: 200px 180px;
+            animation: pulseGlow 6s infinite ease-in-out;
+        }
+
+        .monkey-bg {
+            position: fixed;
+            top: 20px;
+            right: 2vw;
+            width: 350px;
+            height: 350px;
+            z-index: 0;
+            pointer-events: none;
+            filter: drop-shadow(0 15px 25px rgba(0,0,0,0.25));
+        }
+
+        .monkey-bg svg {
+            animation: levitate 6s infinite ease-in-out;
+            overflow: visible;
+        }
+
+        /* Number Rain Canvas - Covers Entire Screen */
+        #matrix-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1; 
+            pointer-events: none;
+            background-color: #000000;
+            display: none; 
+        }
+
+        .glass-card {
+            background: rgba(30, 30, 30, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9);
+        }
+    </style>
+</head>
+<body class="min-h-screen p-6 md:p-12 relative">
+
+    <!-- Global Matrix Canvas -->
+    <canvas id="matrix-canvas"></canvas>
+
+    <!-- Bitcoin Symbol Corrected to be Straight (-rotate-[14deg] counters the standard logo tilt) -->
+    <div class="fixed top-6 left-6 md:top-8 md:left-8 z-50 text-[#F7931A] drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] cursor-pointer -rotate-[14deg] hover:scale-110 transition-transform" title="Bitcoin">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" class="w-12 h-12 md:w-14 md:h-14 fill-current">
+            <path d="M23.94 13.56c.4-2.68-1.63-4.13-4.39-5.07l.9-3.6-2.19-.55-.89 3.56c-.57-.14-1.16-.28-1.75-.41l.89-3.56-2.19-.55-.9 3.6c-.48-.11-.95-.23-1.4-.35l.01-.04-3.02-.75-.58 2.33s1.62.38 1.59.39c.89.22 1.05.81 1.02 1.28l-1.02 4.1c.06.01.14.04.22.08-.07-.02-.15-.03-.22-.05l-1.43 5.73c-.11.27-.39.68-1.01.53.02.01-1.6-.4-1.6-.4l-1.1 2.53 2.85.71c.53.13 1.05.27 1.57.4l-.9 3.63 2.19.55.9-3.61c.6.16 1.18.3 1.74.43l-.9 3.62 2.19.55.91-3.65c3.75.71 6.57.43 7.37-2.92.65-2.68-.07-4.24-1.92-5.25 1.37-.32 2.4-1.32 2.67-3.32zm-2.45 6.94c-.67 2.68-5.18 1.24-6.64.88l1.18-4.73c1.46.36 6.16 1.07 5.46 3.85zm.6-6.85c-.61 2.45-4.38 1.2-5.59.9l1.07-4.3c1.21.3 5.16.85 4.52 3.4z"/>
+        </svg>
+    </div>
+
+    <!-- Monkey Container -->
+    <div id="monkey-container" class="monkey-bg hidden md:block">
+        <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="robeBase" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f39c12"/><stop offset="50%" stop-color="#d35400"/><stop offset="100%" stop-color="#a04000"/></linearGradient>
+                <linearGradient id="robeDark" x1="0%" y1="100%" x2="0%" y2="0%"><stop offset="0%" stop-color="#873600"/><stop offset="100%" stop-color="#d35400"/></linearGradient>
+                <radialGradient id="furGrad" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#5d4037"/><stop offset="80%" stop-color="#3e2723"/><stop offset="100%" stop-color="#1b100b"/></radialGradient>
+                <radialGradient id="skinGrad" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#e3b98c"/><stop offset="70%" stop-color="#c49a6c"/><stop offset="100%" stop-color="#8d6e63"/></radialGradient>
+                <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="0" dy="5" stdDeviation="4" flood-opacity="0.4"/></filter>
+            </defs>
+            <circle class="aura-circle" cx="200" cy="180" r="140" fill="#ffecb3" />
+            <path d="M 40 330 C 40 380, 360 380, 360 330 C 360 290, 300 290, 200 290 C 100 290, 40 290, 40 330 Z" fill="#873600" filter="url(#shadow)"/>
+            <path d="M 60 330 C 60 365, 340 365, 340 330 C 340 300, 280 290, 200 290 C 120 290, 60 300, 60 330 Z" fill="url(#robeBase)"/>
+            <path d="M 100 310 Q 150 340 200 340 Q 250 340 300 310" fill="none" stroke="#a04000" stroke-width="4" stroke-linecap="round"/>
+            <path d="M 80 330 Q 150 355 200 355 Q 250 355 320 330" fill="none" stroke="#a04000" stroke-width="3" stroke-linecap="round"/>
+            <path d="M 120 200 L 280 200 L 300 310 C 250 330, 150 330, 100 310 Z" fill="url(#robeDark)"/>
+            <path d="M 100 220 C 100 180, 150 170, 150 170 C 150 170, 180 250, 200 320 C 150 320, 90 280, 100 220 Z" fill="url(#robeBase)"/>
+            <path d="M 300 220 C 300 180, 250 170, 250 170 C 250 170, 220 250, 200 320 C 250 320, 310 280, 300 220 Z" fill="url(#robeBase)"/>
+            <path d="M 110 240 C 90 280, 140 300, 180 315" stroke="url(#furGrad)" stroke-width="22" stroke-linecap="round" fill="none"/>
+            <path d="M 290 240 C 310 280, 260 300, 220 315" stroke="url(#furGrad)" stroke-width="22" stroke-linecap="round" fill="none"/>
+            <ellipse cx="200" cy="318" rx="28" ry="14" fill="url(#skinGrad)" filter="url(#shadow)"/>
+            <path d="M 185 312 Q 200 306 215 312" fill="none" stroke="#8d6e63" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M 180 322 Q 200 326 220 322" fill="none" stroke="#8d6e63" stroke-width="1.5" stroke-linecap="round"/>
+            <g filter="url(#shadow)">
+                <ellipse cx="130" cy="150" rx="20" ry="30" fill="url(#skinGrad)" transform="rotate(-15 130 150)"/>
+                <path d="M 125 140 Q 140 150 125 160" fill="none" stroke="#8d6e63" stroke-width="3" stroke-linecap="round"/>
+                <ellipse cx="270" cy="150" rx="20" ry="30" fill="url(#skinGrad)" transform="rotate(15 270 150)"/>
+                <path d="M 275 140 Q 260 150 275 160" fill="none" stroke="#8d6e63" stroke-width="3" stroke-linecap="round"/>
+            </g>
+            <ellipse cx="200" cy="140" rx="60" ry="65" fill="url(#furGrad)" filter="url(#shadow)"/>
+            <path d="M 160 125 C 160 100, 240 100, 240 125 C 240 160, 220 185, 200 185 C 180 185, 160 160, 160 125 Z" fill="url(#skinGrad)" filter="url(#shadow)"/>
+            <path d="M 160 125 Q 180 115 200 130 Q 220 115 240 125" fill="none" stroke="#8d6e63" stroke-width="6" stroke-linecap="round"/>
+            <path d="M 170 140 Q 180 137 190 142" fill="none" stroke="#3e2723" stroke-width="3" stroke-linecap="round"/>
+            <path d="M 210 142 Q 220 137 230 140" fill="none" stroke="#3e2723" stroke-width="3" stroke-linecap="round"/>
+            <path d="M 172 146 Q 180 148 188 146" fill="none" stroke="#a1887f" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M 212 146 Q 220 148 228 146" fill="none" stroke="#a1887f" stroke-width="1.5" stroke-linecap="round"/>
+            <ellipse cx="200" cy="170" rx="30" ry="20" fill="#d7ccc8" opacity="0.4"/>
+            <path d="M 192 165 Q 200 160 208 165 L 204 172 Q 200 175 196 172 Z" fill="#3e2723"/>
+            <path d="M 185 182 Q 200 180 215 182" fill="none" stroke="#3e2723" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+    </div>
+
+    <!-- Landing Page (Initial View) -->
+    <div id="landing-page" class="flex flex-col items-center justify-center min-h-[80vh] relative z-20 transition-all duration-500 transform scale-100">
+        <h1 class="text-5xl md:text-7xl font-bold font-philosopher text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-emerald-400 to-blue-400 mb-10 tracking-tight text-center drop-shadow-lg leading-tight uppercase">
+            Crypto Profit
+        </h1>
+        <div class="flex flex-col gap-5 items-center">
+            <button onclick="openCalculator()" class="group flex items-center gap-4 px-12 py-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white text-3xl font-bold rounded-2xl shadow-[0_0_20px_rgba(139,92,246,0.4)] hover:shadow-[0_0_35px_rgba(139,92,246,0.6)] hover:-translate-y-1 transition-all duration-300 focus:outline-none">
+                <i class="fa-solid fa-calculator group-hover:rotate-12 transition-transform"></i> Calculator
+            </button>
+            <button onclick="openWhatIf()" class="group flex items-center gap-4 px-12 py-6 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white text-3xl font-bold rounded-2xl shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_35px_rgba(245,158,11,0.5)] hover:-translate-y-1 transition-all duration-300 focus:outline-none">
+                <i class="fa-solid fa-clock-rotate-left group-hover:-rotate-12 transition-transform"></i> WHAT IF
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content Wrapper (Calculator App) -->
+    <div id="calculator-app" class="hidden opacity-0 translate-y-4 max-w-4xl mx-auto space-y-6 relative z-10 transition-all duration-700">
+        <button onclick="goBackToLanding()" class="group flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white rounded-xl transition-all border border-white/5 focus:outline-none">
+            <i class="fa-solid fa-chevron-left text-xs transition-transform group-hover:-translate-x-1"></i>
+            <span class="text-xs font-black uppercase tracking-widest">Back to Menu</span>
+        </button>
+
+        <div class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-bold font-philosopher text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-emerald-400 to-blue-400 mb-4 tracking-tight uppercase">Analysis Suite</h1>
+            <div class="flex justify-center gap-2 flex-wrap">
+                <button onclick="highlightCard('btc')" class="px-4 py-1.5 bg-[#F7931A] text-white rounded-lg text-sm font-bold shadow-sm transition-all hover:-translate-y-1">BTC</button>
+                <button onclick="highlightCard('eth')" class="px-4 py-1.5 bg-blue-400 text-white rounded-lg text-sm font-bold shadow-sm transition-all hover:-translate-y-1">ETH</button>
+                <button onclick="highlightCard('sol')" class="px-4 py-1.5 bg-[#4ade80] text-emerald-950 rounded-lg text-sm font-bold shadow-sm transition-all hover:-translate-y-1">SOL</button>
+                <button onclick="highlightCard('hype')" class="px-4 py-1.5 bg-[#97FCE4] text-gray-800 rounded-lg text-sm font-bold shadow-sm transition-all hover:-translate-y-1">HYPE</button>
+                <button onclick="highlightCard('link')" class="px-4 py-1.5 bg-[#2A5ADA] text-white rounded-lg text-sm font-bold shadow-sm transition-all hover:-translate-y-1">LINK</button>
+                <button onclick="highlightCard('fiat')" class="px-4 py-1.5 bg-slate-600 text-white rounded-lg text-sm font-bold shadow-sm transition-all hover:-translate-y-1 uppercase">Fiat</button>
+                <button onclick="highlightCard('dca')" class="px-4 py-1.5 bg-[#8B5CF6] text-white rounded-lg text-sm font-bold shadow-sm transition-all hover:-translate-y-1">DCA</button>
+            </div>
+        </div>
+
+        <div id="calculator-containers" class="space-y-6 pb-20">
+            <!-- BTC Card -->
+            <div id="card-btc" class="crypto-card rounded-2xl p-6 md:p-8 transition-all duration-300 relative" style="background-color: #F7931A;">
+                <div class="flex flex-wrap md:flex-nowrap justify-between items-center mb-6 gap-4">
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2 md:w-1/4"><i class="fa-brands fa-bitcoin text-orange-200"></i> BTC</h2>
+                    <div class="flex-1 flex justify-center items-center gap-3">
+                        <div id="btc-live-container" class="bg-black/10 border border-black/5 rounded-xl px-4 py-1.5 flex flex-col items-center justify-center transition-all duration-300 backdrop-blur-sm">
+                            <span class="text-[9px] text-white/70 uppercase tracking-widest font-extrabold mb-0.5 text-center">Live Price</span>
+                            <div class="flex items-baseline gap-1"><span class="text-white/80 text-sm font-bold">$</span><span id="live-btc-price" class="text-white font-bold text-lg tracking-wide">...</span></div>
+                        </div>
+                        <button onclick="refreshSingleLivePrice('btc')" class="text-white/70 hover:text-white p-2 transition-all hover:rotate-180"><i class="fa-solid fa-arrows-rotate"></i></button>
+                    </div>
+                    <div class="md:w-1/4 flex justify-end"><button onclick="resetCard('btc')" class="text-xs font-bold bg-white/30 hover:bg-white/50 text-orange-950 px-4 py-2 rounded-lg transition-colors">Reset</button></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div><label class="block text-xs font-extrabold text-orange-950 mb-2 uppercase">Entry Price</label><div class="relative group"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span><input type="text" inputmode="decimal" id="btc-initial" onfocus="this.select()" class="input-field w-full rounded-xl py-3 pl-8 pr-16 text-gray-800 font-bold outline-none" placeholder="0.00"><button onclick="useLivePrice('btc')" class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase bg-orange-500/20 text-orange-900 hover:bg-orange-500/40 px-2 py-1 rounded transition-colors">LIVE</button></div></div>
+                    <div><label class="block text-xs font-extrabold text-orange-950 mb-2 uppercase">Target Price</label><div class="relative group"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span><input type="text" inputmode="decimal" id="btc-target" onfocus="this.select()" class="input-field w-full rounded-xl py-3 pl-8 pr-20 text-gray-800 font-bold outline-none focus:ring-4 focus:ring-white/50" placeholder="0.00"><div class="absolute right-2 top-1/2 -translate-y-1/2"><select onchange="if(this.value) { setInputVal('btc-target', this.value); this.value=''; }" class="text-[10px] font-bold uppercase bg-orange-500/20 text-orange-900 px-2 py-1 rounded outline-none border-none cursor-pointer"><option value="" disabled selected>TGT</option><option value="70000">70k</option><option value="80000">80k</option><option value="90000">90k</option><option value="100000">100k</option><option value="120000">120k</option><option value="150000">150k</option></select></div></div></div>
+                    <div><label class="block text-xs font-extrabold text-orange-950 mb-2 uppercase">Invest</label><div class="relative group"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span><input type="text" inputmode="decimal" id="btc-investment" onfocus="this.select()" class="input-field w-full rounded-xl py-3 pl-8 pr-20 text-gray-800 font-bold outline-none focus:ring-4 focus:ring-white/50" placeholder="0.00"><div class="absolute right-2 top-1/2 -translate-y-1/2"><select onchange="if(this.value) { setInvestment('btc', this.value); this.value=''; }" class="text-[10px] font-bold uppercase bg-orange-500/20 text-orange-900 px-2 py-1 rounded outline-none border-none cursor-pointer"><option value="" disabled selected>AMT</option><option value="500">500</option><option value="1000">1,000</option><option value="5000">5,000</option></select></div></div></div>
+                </div>
+                <div class="results-box rounded-xl p-5 flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-12 border border-orange-200/50">
+                    <div class="flex items-center gap-3 w-full md:w-1/2"><span class="text-sm font-bold text-orange-900 uppercase">% Increase:</span><span id="btc-increase" class="font-bold text-gray-900 text-lg">--</span></div>
+                    <div class="hidden md:block w-px h-6 bg-orange-300"></div>
+                    <div class="flex items-center gap-3 w-full md:w-1/2"><span class="text-sm font-bold text-orange-900 uppercase">$ Profit:</span><span id="btc-profit" class="font-bold text-gray-900 text-lg">--</span></div>
+                </div>
+            </div>
+
+            <!-- ETH Card -->
+            <div id="card-eth" class="crypto-card rounded-2xl p-6 md:p-8 transition-all duration-300 relative" style="background-color: #93c5fd;">
+                <div class="flex flex-wrap md:flex-nowrap justify-between items-center mb-6 gap-4">
+                    <h2 class="text-xl font-bold text-blue-900 flex items-center gap-2 md:w-1/4"><i class="fa-brands fa-ethereum text-blue-700"></i> ETH</h2>
+                    <div class="flex-1 flex justify-center items-center gap-3">
+                        <div id="eth-live-container" class="bg-black/5 border border-black/5 rounded-xl px-4 py-1.5 flex flex-col items-center justify-center transition-all duration-300 backdrop-blur-sm shadow-sm">
+                            <span class="text-[9px] text-blue-900/70 uppercase tracking-widest font-extrabold mb-0.5 text-center">Live Price</span>
+                            <div class="flex items-baseline gap-1"><span class="text-blue-800 text-sm font-bold">$</span><span id="live-eth-price" class="text-blue-950 font-bold text-lg tracking-wide">...</span></div>
+                        </div>
+                        <button onclick="refreshSingleLivePrice('eth')" class="text-blue-800 hover:text-blue-950 p-2 transition-all hover:rotate-180"><i class="fa-solid fa-arrows-rotate"></i></button>
+                    </div>
+                    <div class="md:w-1/4 flex justify-end"><button onclick="resetCard('eth')" class="text-xs font-bold bg-white/40 hover:bg-white/60 text-blue-950 px-4 py-2 rounded-lg transition-colors">Reset</button></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div><label class="block text-xs font-extrabold text-blue-900 mb-2 uppercase">Entry Price</label><div class="relative group"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span><input type="text" inputmode="decimal" id="eth-initial" onfocus="this.select()" class="input-field w-full rounded-xl py-3 pl-8 pr-16 text-gray-800 font-bold outline-none focus:ring-4 focus:ring-white/50" placeholder="0.00"><button onclick="useLivePrice('eth')" class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase bg-blue-500/20 text-blue-900 hover:bg-blue-500/40 px-2 py-1 rounded transition-colors">LIVE</button></div></div>
+                    <div><label class="block text-xs font-extrabold text-blue-900 mb-2 uppercase">Target Price</label><div class="relative group"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span><input type="text" inputmode="decimal" id="eth-target" onfocus="this.select()" class="input-field w-full rounded-xl py-3 pl-8 pr-20 text-gray-800 font-bold outline-none focus:ring-4 focus:ring-white/50" placeholder="0.00"><div class="absolute right-2 top-1/2 -translate-y-1/2"><select onchange="if(this.value) { setInputVal('eth-target', this.value); this.value=''; }" class="text-[10px] font-bold uppercase bg-blue-500/20 text-blue-900 px-2 py-1 rounded outline-none border-none cursor-pointer"><option value="" disabled selected>TGT</option><option value="2500">2.5k</option><option value="3500">3.5k</option><option value="5500">5.5k</option></select></div></div></div>
+                    <div><label class="block text-xs font-extrabold text-blue-900 mb-2 uppercase">Invest</label><div class="relative group"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span><input type="text" inputmode="decimal" id="eth-investment" onfocus="this.select()" class="input-field w-full rounded-xl py-3 pl-8 pr-20 text-gray-800 font-bold outline-none focus:ring-4 focus:ring-white/50" placeholder="0.00"><div class="absolute right-2 top-1/2 -translate-y-1/2"><select onchange="if(this.value) { setInvestment('eth', this.value); this.value=''; }" class="text-[10px] font-bold uppercase bg-blue-500/20 text-blue-900 px-2 py-1 rounded outline-none border-none cursor-pointer"><option value="" disabled selected>AMT</option><option value="500">500</option><option value="1000">1k</option><option value="5000">5k</option></select></div></div></div>
+                </div>
+                <div class="results-box rounded-xl p-5 flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-12 border border-blue-200/50">
+                    <div class="flex items-center gap-3 w-full md:w-1/2"><span class="text-sm font-bold text-blue-900 uppercase">% Increase:</span><span id="eth-increase" class="font-bold text-gray-900 text-lg">--</span></div>
+                    <div class="hidden md:block w-px h-6 bg-blue-300"></div>
+                    <div class="flex items-center gap-3 w-full md:w-1/2"><span class="text-sm font-bold text-blue-900 uppercase">$ Profit:</span><span id="eth-profit" class="font-bold text-gray-900 text-lg">--</span></div>
+                </div>
+            </div>
+
+            <!-- SOL Card -->
+            <div id="card-sol" class="crypto-card rounded-2xl p-6 md:p-8 transition-all duration-300 relative" style="background-color: #4ade80;">
+                <div class="flex flex-wrap md:flex-nowrap justify-between items-center mb-6 gap-4">
+                    <h2 class="text-xl font-bold text-emerald-950 flex items-center gap-2 md:w-1/4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-emerald-700 fill-current" viewBox="0 0 394 308"><path d="M68.5 119C71.4 116.1 75.3 114.5 79.3 114.5H388.6C395.3 114.5 398.7 122.7 393.9 127.5L329.1 192.3C326.3 195.2 322.4 196.8 318.3 196.8H9.1C2.3 196.8 -1.1 188.6 3.7 183.8L68.5 119Z"/><path d="M68.5 3.7C71.4 0.9 75.3 -0.8 79.3 -0.8H388.6C395.3 -0.8 398.7 7.4 393.9 12.2L329.1 77C326.3 79.9 322.4 81.5 318.3 81.5H9.1C2.3 81.5 -1.1 73.3 3.7 68.5L68.5 3.7Z"/><path d="M329.1 229.8C326.3 226.9 322.4 225.3 318.3 225.3H9.1C2.3 225.3 -1.1 233.5 3.7 238.3L68.5 303.1C71.4 306 75.3 307.6 79.3 307.6H388.6C395.3 307.6 398.7 299.4 393.9 294.6L329.1 229.8Z"/></svg> SOL
+                    </h2>
+                    <div class="flex-1 flex justify-center items-center gap-3">
+                        <div id="sol-live-container" class="bg-black/5 border border-black/5 rounded-xl px-4 py-1.5 flex flex-col items-center justify-center transition-all duration-300 backdrop-blur-sm shadow-sm">
+                            <span class="text-[9px] text-emerald-900/70 uppercase tracking-widest font-extrabold mb-0.5 text-center">Live Price</span>
+                            <div class="flex items-baseline gap-1"><span class="text-emerald-800 text-sm font-bold">$</span><span id="live-sol-price" class="text-emerald-950 font-bold text-lg tracking-wide">...</span></div>
+                        </div>
+                        <button onclick="refreshSingleLivePrice('sol')" class="text-emerald-800 hover:text-emerald-950 p-2 transition-all hover:rotate-180"><i class="fa-solid fa-arrows-rotate"></i></button>
+                    </div>
+                    <div class="md:w-1/4 flex justify-end"><button onclick="resetCard('sol')" class="text-xs font-bold bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-950 px-4 py-2 rounded-lg transition-colors">Reset</button></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div><label class="block text-xs font-extrabold text-emerald-900 mb-2 uppercase">Entry Price</label><div class="relative group"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span><input type="text" inputmode="decimal" id="sol-initial" onfocus="this.select()" class="input-field w-full rounded-xl py-3 pl-8 pr-16 text-gray-800 font-bold outline-none focus:ring-4 focus:ring-white/50" placeholder="0.00"><button onclick="useLivePrice('sol')" class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase bg-emerald-600/20 text-emerald-900 hover:bg-emerald-600/40 px-2 py-1 rounded transition-colors">LIVE</button></div></div>
+                    <div><label class="block text-xs font-extrabold text-emerald-900 mb-2 uppercase">Target Price</label><div class="relative group"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span><input type="text" inputmode="decimal" id="sol-target" onfocus="this.select()" class="input-field w-full rounded-xl py-3 pl-8 pr-20 text-gray-800 font-bold outline-none focus:ring-4 focus:ring-white/50" placeholder="0.00"><div class="absolute right-2 top-1/2 -translate-y-1/2"><select onchange="if(this.value) { setInputVal('sol-target', this.value); this.value=''; }" class="text-[10px] font-bold uppercase bg-emerald-600/20 text-emerald-950 px-2 py-1 rounded outline-none border-none cursor-pointer"><option value="" disabled selected>TGT</option><option value="90">90</option><option value="150">150</option><option value="250">250</option><option value="400">400</option></select></div></div></div>
+                    <div><label class="block text-xs font-extrabold text-emerald-900 mb-2 uppercase">Invest</label><div class="relative group"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span><input type="text" inputmode="decimal" id="sol-investment" onfocus="this.select()" class="input-field w-full rounded-xl py-3 pl-8 pr-20 text-gray-800 font-bold outline-none focus:ring-4 focus:ring-white/50" placeholder="0.00"><div class="absolute right-2 top-1/2 -translate-y-1/2"><select onchange="if(this.value) { setInvestment('sol', this.value); this.value=''; }" class="text-[10px] font-bold uppercase bg-emerald-600/20 text-emerald-950 px-2 py-1 rounded outline-none border-none cursor-pointer"><option value="" disabled selected>AMT</option><option value="500">500</option><option value="1000">1k</option><option value="5000">5k</option></select></div></div></div>
+                </div>
+                <div class="results-box rounded-xl p-5 flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-12 border border-emerald-200/50">
+                    <div class="flex items-center gap-3 w-full md:w-1/2"><span class="text-sm font-bold text-emerald-800 uppercase">% Increase:</span><span id="sol-increase" class="font-bold text-gray-900 text-lg">--</span></div>
+                    <div class="hidden md:block w-px h-6 bg-emerald-300"></div>
+                    <div class="flex items-center gap-3 w-full md:w-1/2"><span class="text-sm font-bold text-emerald-800 uppercase">$ Profit:</span><span id="sol-profit" class="font-bold text-gray-900 text-lg">--</span></div>
+                </div>
+            </div>
+
+            <!-- HYPE Card -->
+            <div id="card-hype" class="crypto-card rounded-2xl p-6 md:p-8 transition-all duration-300 relative" style="background-color: #97FCE4;">
+                <div class="flex flex-wrap md:flex-nowrap justify-between items-center mb-6 gap-4">
+                    <h2 class="text-xl font-bold text-teal-900 flex items-center gap-2 md:w-1/4">
+                        <img src="https://s2.coinmarketcap.com/static/img/coins/64x64/32196.png" alt="HYPE Logo" class="w-6 h-6 rounded-full shadow-sm"> HYPE
+                    </h2>
+                    <div class="flex-1 flex justify-center items-center gap-3">
+                        <div id="hype-live-container" class="bg-black/5 border border-black/5 rounded-xl px-4 py-1.5 flex flex-col items-center justify-center transition-all duration-300 backdrop-blur-sm shadow-sm">
+                            <span class="text-[9px] text-teal-900/70 uppercase tracking-widest font-extrabold mb-0.5 text-center">Live Price</span>
+                            <div class="flex items-baseline gap-1"><span class="text-teal-800 text-sm font-bold">$</span><span id="live-hype-price" class="text-teal-950 font-bold text-lg tracking-wide">...</span></div>
+                        </div>
+                        <button onclick="refreshSingleLivePrice('hype')" class="text-teal-800 hover:text-teal-950 p-2 transition-all hover:rotate-180"><i class="fa-solid fa-arrows-rotate"></i></button>
+                    </div>
+                    <div class="md:w-1/4 flex justify-end"><button onclick="resetCard('hype')" class="text-xs font-bold bg-teal-600/10 hover:bg-teal-600/20 text-teal-950 px-4 py-2 rounded-lg transition-colors">Reset</button></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div><label class="block text-xs font-extrabold text-teal-900 mb-2 uppercase">Entry Price</label><div class="relative group"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span><input type="text" inputmode="decimal" id="hype-initial" onfocus="this.select()" class="input-field w-full rounded-xl py-3 pl-8 pr-16 text-gray-800 font-bold outline-none focus:ring-4 focus:ring-white/50" placeholder="0.00"><button onclick="useLivePrice('hype')" class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase bg-teal-600/10 text-teal-900 hover:bg-teal-600/30 px-2 py-1 rounded transition-colors">LIVE</button></div></div>
+                    <div><label class="block text-xs font-extrabold text-teal-900 mb-2 uppercase">Target Price</label><div class="relative group"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span><input type="text" inputmode="decimal" id="hype-target" onfocus="this.select()" class="input-field w-full rounded-xl py-3 pl-8 pr-20 text-gray-800 font-bold outline-none focus:ring-4 focus:ring-white/50" placeholder="0.00"><div class="absolute right-2 top-1/2 -translate-y-1/2"><select onchange="if(this.value) { setInputVal('hype-target', this.value); this.value=''; }" class="text-[10px] font-bold uppercase bg-teal-600/10 text-teal-950 px-2 py-1 rounded outline-none border-none cursor-pointer"><option value="" disabled selected>TGT</option><option value="40">40</option><option value="60">60</option></select></div></div></div>
+                    <div><label class="block text-xs font-extrabold text-teal-900 mb-2 uppercase">Invest</label><div class="relative group"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span><input type="text" inputmode="decimal" id="hype-investment" onfocus="this.select()" class="input-field w-full rounded-xl py-3 pl-8 pr-20 text-gray-800 font-bold outline-none focus:ring-4 focus:ring-white/50" placeholder="0.00"><div class="absolute right-2 top-1/2 -translate-y-1/2"><select onchange="if(this.value) { setInvestment('hype', this.value); this.value=''; }" class="text-[10px] font-bold uppercase bg-teal-600/10 text-teal-950 px-2 py-1 rounded outline-none border-none cursor-pointer"><option value="" disabled selected>AMT</option><option value="500">500</option><option value="1000">1k</option><option value="5000">5k</option></select></div></div></div>
+                </div>
+                <div class="results-box rounded-xl p-5 flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-12 border border-teal-200/50">
+                    <div class="flex items-center gap-3 w-full md:w-1/2"><span class="text-sm font-bold text-teal-900 uppercase">% Increase:</span><span id="hype-increase" class="font-bold text-gray-900 text-lg">--</span></div>
+                    <div class="hidden md:block w-px h-6 bg-teal-300"></div>
+                    <div class="flex items-center gap-3 w-full md:w-1/2"><span class="text-sm font-bold text-teal-900 uppercase">$ Profit:</span><span id="hype-profit" class="font-bold text-gray-900 text-lg">--</span></div>
+                </div>
+            </div>
+
+            <!-- LINK Card -->
+            <div id="card-link" class="crypto-card rounded-2xl p-6 md:p-8 transition-all duration-300 relative" style="background-color: #2A5ADA;">
+                <div class="flex flex-wrap md:flex-nowrap justify-between items-center mb-6 gap-4">
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2 md:w-1/4"><i class="fa-solid fa-link text-blue-200"></i> LINK</h2>
+                    <div class="flex-1 flex justify-center items-center gap-3">
+                        <div id="link-live-container" class="bg-black/10 border border-black/5 rounded-xl px-4 py-1.5 flex flex-col items-center justify-center transition-all duration-300 backdrop-blur-sm shadow-sm">
+                            <span class="text-[9px] text-white/70 uppercase tracking-widest font-extrabold mb-0.5 text-center">Live Price</span>
+                            <div class="flex items-baseline gap-1"><span class="text-white/80 text-sm font-bold">$</span><span id="live-link-price" class="text-white font-bold text-lg tracking-wide">...</span></div>
+                        </div>
+                        <button onclick="refreshSingleLivePrice('link')" class="text-white/70 hover:text-white p-2 transition-all hover:rotate-180"><i class="fa-solid fa-arrows-rotate"></i></button>
+                    </div>
+                    <div class="md:w-1/4 flex justify-end"><button onclick="resetCard('link')" class="text-xs font-bold bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-colors">Reset</button></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div><label class="block text-xs font-extrabold text-white mb-2 uppercase">Entry Price</label><div class="relative group"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span><input type="text" inputmode="decimal" id="link-initial" onfocus="this.select()" class="input-field w-full rounded-xl py-3 pl-8 pr-16 text-gray-800 font-bold outline-none focus:ring-4 focus:ring-white/50" placeholder="0.00"><button onclick="useLivePrice('link')" class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase bg-white/20 text-blue-900 hover:bg-white/40 px-2 py-1 rounded transition-colors">LIVE</button></div></div>
+                    <div><label class="block text-xs font-extrabold text-white mb-2 uppercase">Target Price</label><div class="relative group"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span><input type="text" inputmode="decimal" id="link-target" onfocus="this.select()" class="input-field w-full rounded-xl py-3 pl-8 pr-20 text-gray-800 font-bold outline-none focus:ring-4 focus:ring-white/50" placeholder="0.00"><div class="absolute right-2 top-1/2 -translate-y-1/2"><select onchange="if(this.value) { setInputVal('link-target', this.value); this.value=''; }" class="text-[10px] font-bold uppercase bg-white/20 text-white px-2 py-1 rounded outline-none border-none cursor-pointer"><option value="" disabled selected>TGT</option><option value="30">30</option><option value="50">50</option><option value="100">100</option></select></div></div></div>
+                    <div><label class="block text-xs font-extrabold text-white mb-2 uppercase">Invest</label><div class="relative group"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span><input type="text" inputmode="decimal" id="link-investment" onfocus="this.select()" class="input-field w-full rounded-xl py-3 pl-8 pr-20 text-gray-800 font-bold outline-none focus:ring-4 focus:ring-white/50" placeholder="0.00"><div class="absolute right-2 top-1/2 -translate-y-1/2"><select onchange="if(this.value) { setInvestment('link', this.value); this.value=''; }" class="text-[10px] font-bold uppercase bg-white/20 text-white px-2 py-1 rounded outline-none border-none cursor-pointer"><option value="" disabled selected>AMT</option><option value="500">500</option><option value="1000">1k</option><option value="5000">5k</option></select></div></div></div>
+                </div>
+                <div class="results-box rounded-xl p-5 flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-12 border border-blue-400/50">
+                    <div class="flex items-center gap-3 w-full md:w-1/2"><span class="text-sm font-bold text-white uppercase">% Increase:</span><span id="link-increase" class="font-bold text-gray-900 text-lg">--</span></div>
+                    <div class="hidden md:block w-px h-6 bg-blue-400"></div>
+                    <div class="flex items-center gap-3 w-full md:w-1/2"><span class="text-sm font-bold text-white uppercase">$ Profit:</span><span id="link-profit" class="font-bold text-gray-900 text-lg">--</span></div>
+                </div>
+            </div>
+
+            <!-- USD/INR Card -->
+            <div id="card-fiat" class="crypto-card rounded-2xl p-6 md:p-8 transition-all duration-300 relative" style="background-color: #475569;">
+                <div class="flex flex-wrap md:flex-nowrap justify-between items-center mb-6 gap-4">
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2 md:w-1/4"><i class="fa-solid fa-money-bill-transfer text-slate-300"></i> USD / INR</h2>
+                    <div class="flex-1 flex justify-center items-center gap-3">
+                        <div id="fiat-live-container" class="bg-black/10 border border-black/5 rounded-xl px-4 py-1.5 flex flex-col items-center justify-center transition-all duration-300 backdrop-blur-sm shadow-sm">
+                            <span class="text-[9px] text-slate-300 uppercase tracking-widest font-extrabold mb-0.5 text-center">Live Rate</span>
+                            <div class="flex items-baseline gap-1"><span class="text-slate-300 text-sm font-bold">₹</span><span id="live-fiat-price" class="text-white font-bold text-lg tracking-wide">...</span></div>
+                        </div>
+                        <button onclick="fetchLiveFiatPrice()" class="text-slate-300 hover:text-white transition-all hover:rotate-180 p-2"><i class="fa-solid fa-arrows-rotate"></i></button>
+                    </div>
+                    <div class="md:w-1/4 flex justify-end"><button onclick="resetFiat()" class="text-xs font-bold bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg transition-colors">Reset</button></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-2">
+                    <div><label class="block text-xs font-extrabold text-slate-200 mb-2 uppercase">USD Amount</label><div class="relative group"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-medium">$</span><input type="text" inputmode="decimal" id="fiat-usd" onfocus="this.select()" class="input-field w-full rounded-xl py-3 pl-8 pr-4 text-gray-800 font-bold outline-none focus:ring-4 focus:ring-white/50" placeholder="0.00"></div></div>
+                    <div><label class="block text-xs font-extrabold text-slate-200 mb-2 uppercase">INR Amount</label><div class="relative group"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-medium">₹</span><input type="text" inputmode="decimal" id="fiat-inr" onfocus="this.select()" class="input-field w-full rounded-xl py-3 pl-8 pr-4 text-gray-800 font-bold outline-none focus:ring-4 focus:ring-white/50" placeholder="0.00"></div></div>
+                </div>
+            </div>
+
+            <!-- DCA Card -->
+            <div id="card-dca" class="crypto-card rounded-2xl p-6 md:p-8 transition-all duration-300 relative" style="background-color: #8B5CF6;">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2"><i class="fa-solid fa-layer-group text-purple-200"></i> DCA CALCULATOR</h2>
+                    <button onclick="resetDCA()" class="text-xs font-bold bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-colors">Reset</button>
+                </div>
+                <div id="dca-entries" class="space-y-3 mb-6"></div>
+                <button onclick="addDCAEntry()" class="w-full mb-8 px-6 py-3 bg-purple-700/50 hover:bg-purple-700/80 text-white text-sm font-bold rounded-xl border border-purple-400/30 border-dashed flex justify-center items-center transition-colors"><i class="fa-solid fa-plus mr-2"></i> ADD BUY</button>
+                <div id="dca-chart-container" class="w-full h-72 mb-6 hidden bg-purple-900/20 p-4 rounded-xl relative"><canvas id="dcaChart"></canvas></div>
+                <div class="results-box rounded-xl p-5 flex flex-col md:flex-row items-center justify-between gap-6 border border-purple-400/50">
+                    <div class="text-center w-full md:w-1/3"><span class="block text-xs font-bold text-purple-900 mb-1 uppercase">Invested</span><span id="dca-total-invested" class="font-bold text-gray-900 text-xl">$0.00</span></div>
+                    <div class="text-center w-full md:w-1/3"><span class="block text-xs font-bold text-purple-900 mb-1 uppercase">Avg Price</span><span id="dca-average-price" class="font-bold text-green-700 text-2xl">$0.00</span></div>
+                    <div class="text-center w-full md:w-1/3"><span class="block text-xs font-bold text-purple-900 mb-1 uppercase">Total Coins</span><span id="dca-total-coins" class="font-bold text-gray-900 text-lg">0.00</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- WHAT IF App Wrapper -->
+    <div id="what-if-app" class="hidden opacity-0 translate-y-4 max-w-2xl mx-auto space-y-6 relative z-10 transition-all duration-700 text-white text-center">
+        
+        <div class="flex justify-start mb-6">
+            <button onclick="goBackToLanding()" class="group flex items-center gap-2 px-5 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white rounded-xl transition-all border border-white/10 backdrop-blur-md focus:outline-none">
+                <i class="fa-solid fa-chevron-left text-xs group-hover:-translate-x-1 transition-transform"></i>
+                <span class="text-xs font-black uppercase tracking-widest">Back to Menu</span>
+            </button>
+        </div>
+
+        <div class="glass-card p-6 md:p-8 rounded-[2.5rem] shadow-2xl mx-auto max-w-sm relative overflow-hidden">
+            <h2 class="text-3xl font-extrabold mb-1 font-philosopher text-amber-400 uppercase">Time Machine</h2>
+            <p class="text-gray-400 mb-6 text-[10px] font-medium uppercase tracking-widest">Investment Simulation</p>
+            
+            <div class="space-y-4 mb-8">
+                <div class="flex gap-2 justify-center">
+                    <select id="wi-day" class="bg-white/10 border border-white/10 rounded-lg py-2 px-1 text-white font-bold outline-none text-xs text-center w-14 hover:bg-white/20 transition-colors cursor-pointer"></select>
+                    <select id="wi-month" class="bg-white/10 border border-white/10 rounded-lg py-2 px-1 text-white font-bold outline-none text-xs text-center w-20 hover:bg-white/20 transition-colors cursor-pointer">
+                        <option value="01">Jan</option><option value="02">Feb</option><option value="03">Mar</option>
+                        <option value="04">Apr</option><option value="05">May</option><option value="06">Jun</option>
+                        <option value="07">Jul</option><option value="08">Aug</option><option value="09">Sep</option>
+                        <option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
+                    </select>
+                    <select id="wi-year" class="bg-white/10 border border-white/10 rounded-lg py-2 px-1 text-white font-bold outline-none text-xs text-center w-16 hover:bg-white/20 transition-colors cursor-pointer"></select>
+                </div>
+                
+                <div class="text-[10px] font-black uppercase tracking-widest text-gray-500">
+                    HISTORICAL PRICE: <span id="wi-hist-price" class="text-white">...</span>
+                </div>
+
+                <div class="relative group mt-4">
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-lg text-amber-400 font-bold">$</span>
+                    <input type="text" id="wi-amount" inputmode="decimal" class="w-full bg-white/10 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-xl text-white font-black outline-none focus:ring-2 focus:ring-amber-500/30 transition-all text-center" placeholder="Amount">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 text-left">
+                <div class="bg-black/40 p-3 rounded-xl border border-white/5">
+                    <span class="block text-[7px] font-black text-gray-500 mb-1 uppercase">BTC Owned</span>
+                    <span id="res-btc-owned" class="text-xs font-black text-white">0.000000</span>
+                </div>
+                <div class="bg-black/40 p-3 rounded-xl border border-white/5">
+                    <span class="block text-[7px] font-black text-gray-500 mb-1 uppercase">Value Now</span>
+                    <span id="res-val-today" class="text-xs font-black text-amber-400">$0.00</span>
+                </div>
+                <div class="bg-black/40 p-3 rounded-xl border border-white/5">
+                    <span class="block text-[7px] font-black text-gray-500 mb-1 uppercase">Net P/L</span>
+                    <span id="res-pnl" class="text-xs font-black text-green-400">$0.00</span>
+                </div>
+                <div class="bg-black/40 p-3 rounded-xl border border-white/5">
+                    <span class="block text-[7px] font-black text-gray-500 mb-1 uppercase">Gain</span>
+                    <span id="res-perc" class="text-xs font-black text-green-400">0%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const coins = ['btc', 'eth', 'sol', 'hype', 'link'];
+        let livePrices = { btc: 0, eth: 0, sol: 0, hype: 39.36, link: 0 };
+        let currentUsdInrRate = 0;
+        
+        let matrixInterval = null;
+        let drops = []; 
+
+        let historicalPriceBtc = 0;
+        let histFetchTimeout = null;
+
+        window.addEventListener('load', () => {
+            // Setup Date Pickers
+            const daySel = document.getElementById('wi-day');
+            for(let i=1; i<=31; i++) daySel.add(new Option(i.toString().padStart(2,'0'), i.toString().padStart(2,'0')));
+            const yearSel = document.getElementById('wi-year');
+            for(let i=new Date().getFullYear(); i>=2013; i--) yearSel.add(new Option(i, i));
+            
+            daySel.value = "01"; 
+            document.getElementById('wi-month').value = "01"; 
+            yearSel.value = "2020";
+
+            fetchAllLivePrices(); 
+            fetchLiveFiatPrice(); 
+            
+            setTimeout(fetchHistoricalPrice, 500);
+            
+            setInterval(() => { fetchAllLivePrices(); fetchLiveFiatPrice(); }, 3600000);
+
+            // Debounce Date changes 
+            ['wi-day', 'wi-month', 'wi-year'].forEach(id => {
+                document.getElementById(id).addEventListener('change', () => {
+                    const statusEl = document.getElementById('wi-hist-price');
+                    statusEl.textContent = "Waiting...";
+                    statusEl.className = "text-gray-500 animate-pulse";
+                    clearTimeout(histFetchTimeout);
+                    histFetchTimeout = setTimeout(fetchHistoricalPrice, 600);
+                });
+            });
+            
+            const wiAmtInp = document.getElementById('wi-amount');
+            if(wiAmtInp) {
+                wiAmtInp.addEventListener('input', (e) => {
+                    const clean = e.target.value.replace(/,/g, '');
+                    if(!isNaN(clean) && clean !== "") {
+                        e.target.value = parseFloat(clean).toLocaleString('en-US');
+                    }
+                    runSimulation();
+                });
+            }
+            
+            coins.forEach(coin => {
+                const ids = [`${coin}-initial`, `${coin}-target`, `${coin}-investment`];
+                ids.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.addEventListener('input', () => {
+                        const startVal = document.getElementById(`${coin}-initial`).value.replace(/,/g, '');
+                        const targetVal = document.getElementById(`${coin}-target`).value.replace(/,/g, '');
+                        const investVal = document.getElementById(`${coin}-investment`).value.replace(/,/g, '');
+                        
+                        const start = parseFloat(startVal), target = parseFloat(targetVal), invest = parseFloat(investVal);
+                        const incEl = document.getElementById(`${coin}-increase`), profEl = document.getElementById(`${coin}-profit`);
+                        
+                        if (start > 0 && !isNaN(target) && !isNaN(invest) && incEl && profEl) {
+                            const inc = ((target - start) / start) * 100;
+                            const prof = invest * (inc / 100);
+                            incEl.textContent = (inc >= 0 ? '+' : '') + inc.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '%';
+                            profEl.textContent = (prof >= 0 ? '$' : '-$') + Math.abs(prof).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            incEl.className = profEl.className = inc >= 0 ? 'font-bold text-green-700 text-lg' : 'font-bold text-red-600 text-lg';
+                        } else if (incEl && profEl) {
+                            incEl.textContent = '--';
+                            profEl.textContent = '--';
+                            incEl.className = 'font-bold text-gray-900 text-lg';
+                            profEl.className = 'font-bold text-gray-900 text-lg';
+                        }
+                    });
+                });
+            });
+            
+            const fUsd = document.getElementById('fiat-usd');
+            const fInr = document.getElementById('fiat-inr');
+            if(fUsd) fUsd.addEventListener('input', () => handleFiatConversion('usd'));
+            if(fInr) fInr.addEventListener('input', () => handleFiatConversion('inr'));
+            
+            const dcaContainer = document.getElementById('dca-entries');
+            if(dcaContainer) {
+                resetDCA();
+                dcaContainer.addEventListener('input', calculateDCA);
+            }
+        });
+
+        // --- FETCH HISTORICAL BTC PRICE ---
+        async function fetchHistoricalPrice() {
+            const day = document.getElementById('wi-day').value;
+            const month = document.getElementById('wi-month').value;
+            const year = document.getElementById('wi-year').value;
+            const dateParam = `${day}-${month}-${year}`;
+            const statusEl = document.getElementById('wi-hist-price');
+            
+            statusEl.textContent = "Loading...";
+            statusEl.className = "text-amber-500 animate-pulse";
+
+            try {
+                const selectedDate = new Date(`${year}-${month}-${day}`);
+                const now = new Date();
+                
+                if (selectedDate > now) {
+                    historicalPriceBtc = livePrices.btc;
+                    statusEl.textContent = `(Live) $${(historicalPriceBtc||0).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                    statusEl.className = "text-white font-black";
+                    runSimulation();
+                    return;
+                }
+
+                const res = await fetch(`https://api.coingecko.com/api/v3/coins/bitcoin/history?date=${dateParam}&localization=false`);
+                
+                if (!res.ok) {
+                    statusEl.textContent = "ERROR (API LIMIT)";
+                    statusEl.className = "text-red-500 font-black text-[9px]";
+                    historicalPriceBtc = 0;
+                    runSimulation();
+                    return;
+                }
+
+                const data = await res.json();
+                if (data && data.market_data) {
+                    historicalPriceBtc = data.market_data.current_price.usd;
+                    statusEl.textContent = `$${historicalPriceBtc.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                    statusEl.className = "text-white font-black";
+                } else if (parseInt(year) < 2013) {
+                    statusEl.textContent = "Before BTC Trading";
+                    statusEl.className = "text-red-500 font-black text-[9px]";
+                    historicalPriceBtc = 0;
+                } else {
+                    statusEl.textContent = "Approx $13.50";
+                    statusEl.className = "text-gray-400 font-black";
+                    historicalPriceBtc = 13.50; 
+                }
+                runSimulation();
+            } catch (e) { 
+                statusEl.textContent = "ERROR"; 
+                statusEl.className = "text-red-500 font-black";
+                historicalPriceBtc = 0; 
+                runSimulation();
+            }
+        }
+
+        // --- TIME MACHINE SIMULATION ---
+        function runSimulation() {
+            const val = parseFloat(document.getElementById('wi-amount').value.replace(/,/g, ''));
+            const resBtc = document.getElementById('res-btc-owned'), resVal = document.getElementById('res-val-today');
+            const resPnl = document.getElementById('res-pnl'), resPerc = document.getElementById('res-perc');
+
+            if (isNaN(val) || val <= 0 || historicalPriceBtc <= 0 || livePrices.btc <= 0) {
+                resBtc.textContent = "0.000000"; resVal.textContent = "$0.00"; resPnl.textContent = "$0.00"; resPerc.textContent = "0%";
+                resPerc.className = `text-xs font-black text-gray-500`;
+                resPnl.className = `text-xs font-black text-gray-500`;
+                return;
+            }
+
+            const btcOwned = val / historicalPriceBtc;
+            const valTodayUsd = btcOwned * livePrices.btc;
+            const pnlUsd = valTodayUsd - val;
+            const perc = ((livePrices.btc - historicalPriceBtc) / historicalPriceBtc) * 100;
+
+            resBtc.textContent = btcOwned.toLocaleString('en-US', {maximumFractionDigits: 6});
+            resVal.textContent = `$${valTodayUsd.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
+            resPnl.textContent = `${pnlUsd >= 0 ? '+' : '-'}$${Math.abs(pnlUsd).toLocaleString('en-US', {maximumFractionDigits: 0})}`;
+            resPerc.textContent = `${perc >= 0 ? '+' : ''}${perc.toFixed(0)}%`;
+            
+            const color = pnlUsd >= 0 ? 'text-green-400' : 'text-red-400';
+            resPerc.className = `text-xs font-black ${color}`;
+            resPnl.className = `text-xs font-black ${color}`;
+        }
+
+        // --- NUMBER RAIN ANIMATION ---
+        function startMatrixEffect() {
+            const canvas = document.getElementById('matrix-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.style.display = 'block';
+            
+            function setupCanvas() {
+                canvas.width = window.innerWidth; 
+                canvas.height = window.innerHeight;
+                const columns = Math.ceil(canvas.width / 14);
+                if (columns > drops.length) {
+                    drops.push(...Array(columns - drops.length).fill(0));
+                }
+            }
+            
+            setupCanvas();
+            window.onresize = setupCanvas;
+
+            function draw() {
+                ctx.fillStyle = "rgba(0, 0, 0, 0.2)"; 
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = "#F7931A"; 
+                ctx.font = "14px monospace";
+                
+                drops.forEach((y, i) => {
+                    ctx.fillText(Math.floor(Math.random()*10), i * 14, y * 14);
+                    if (y * 14 > canvas.height && Math.random() > 0.99) drops[i] = 0;
+                    drops[i]++;
+                });
+            }
+            
+            if(matrixInterval) clearInterval(matrixInterval);
+            matrixInterval = setInterval(draw, 100);
+        }
+
+        // --- NAVIGATION ---
+        function openCalculator() { 
+            document.body.style.backgroundColor = '#23292F'; 
+            document.getElementById('matrix-canvas').style.display = 'none'; 
+            document.getElementById('monkey-container').classList.remove('!hidden'); 
+            document.getElementById('landing-page').classList.add('hidden'); 
+            document.getElementById('calculator-app').classList.remove('hidden'); 
+            setTimeout(() => document.getElementById('calculator-app').classList.remove('opacity-0'), 50); 
+            confetti({ particleCount: 150, zIndex: 1000 }); 
+        }
+        
+        function openWhatIf() { 
+            document.body.style.backgroundColor = '#000000'; 
+            document.getElementById('monkey-container').classList.add('!hidden'); 
+            document.getElementById('landing-page').classList.add('hidden'); 
+            document.getElementById('what-if-app').classList.remove('hidden'); 
+            setTimeout(() => { 
+                document.getElementById('what-if-app').classList.remove('opacity-0'); 
+                startMatrixEffect(); 
+            }, 50); 
+        }
+        
+        function goBackToLanding() { 
+            if(matrixInterval) clearInterval(matrixInterval); 
+            document.body.style.backgroundColor = '#23292F'; 
+            document.getElementById('matrix-canvas').style.display = 'none'; 
+            document.getElementById('monkey-container').classList.remove('!hidden'); 
+            document.getElementById('calculator-app').classList.add('hidden'); 
+            document.getElementById('what-if-app').classList.add('hidden'); 
+            document.getElementById('landing-page').classList.remove('hidden'); 
+        }
+
+        // --- GLOBAL APIS ---
+        async function fetchLivePrice(id, symbol) {
+            try {
+                let p = 0;
+                if (id === 'hype') p = 39.36 + (Math.random() * 1.5 - 0.75);
+                else { 
+                    const r = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`); 
+                    const d = await r.json(); 
+                    p = parseFloat(d.price); 
+                }
+                if (p > 0) { 
+                    livePrices[id] = p; 
+                    const el = document.getElementById(`live-${id}-price`); 
+                    if(el) el.textContent = p.toLocaleString('en-US', {minimumFractionDigits: 2}); 
+                    if(id === 'btc') runSimulation();
+                }
+            } catch (e) {}
+        }
+        
+        function fetchAllLivePrices() { 
+            [{id:'btc',s:'BTCUSDT'},{id:'eth',s:'ETHUSDT'},{id:'sol',s:'SOLUSDT'},{id:'hype',s:'HYPEUSDT'},{id:'link',s:'LINKUSDT'}].forEach(c => fetchLivePrice(c.id, c.s)); 
+        }
+        
+        function refreshSingleLivePrice(id) { 
+            const cfg = {btc:'BTCUSDT',eth:'ETHUSDT',sol:'SOLUSDT',hype:'HYPEUSDT',link:'LINKUSDT'}; 
+            fetchLivePrice(id, cfg[id]); 
+            const icon = document.querySelector(`button[onclick*="refreshSingleLivePrice('${id}')"] i`);
+            if (icon) { icon.classList.add('animate-spin'); setTimeout(() => icon.classList.remove('animate-spin'), 500); }
+        }
+        
+        async function fetchLiveFiatPrice() { 
+            try { 
+                const r = await fetch('https://open.er-api.com/v6/latest/USD'); 
+                const d = await r.json(); 
+                if(d.rates.INR) {
+                    currentUsdInrRate = d.rates.INR; 
+                    const el = document.getElementById('live-fiat-price');
+                    if(el) el.textContent = currentUsdInrRate.toLocaleString('en-US', {minimumFractionDigits:2});
+                }
+            } catch(e){} 
+        }
+
+        // --- CALCULATOR UI HELPERS ---
+        function setInputVal(id, val) { 
+            const el = document.getElementById(id); 
+            if(el) { 
+                el.value = parseFloat(val).toLocaleString(); 
+                el.dispatchEvent(new Event('input')); 
+            } 
+        }
+        function setInvestment(c, v) { setInputVal(`${c}-investment`, v); }
+        
+        function useLivePrice(id) { 
+            const p = document.getElementById(`live-${id}-price`).textContent; 
+            const i = document.getElementById(`${id}-initial`); 
+            if(i && p !== '...') { 
+                i.value = p; 
+                i.dispatchEvent(new Event('input')); 
+            } 
+        }
+        
+        function resetCard(c) { 
+            [`${c}-initial`, `${c}-target`, `${c}-investment`].forEach(id => { 
+                const el = document.getElementById(id); 
+                if(el) el.value = ''; 
+            }); 
+            const initEl = document.getElementById(`${c}-initial`);
+            if(initEl) initEl.dispatchEvent(new Event('input')); 
+        }
+        
+        function highlightCard(c) { 
+            document.querySelectorAll('.crypto-card').forEach(card => { 
+                card.style.boxShadow = ''; 
+                card.style.transform = ''; 
+            }); 
+            const sel = document.getElementById(`card-${c}`); 
+            if(sel) { 
+                sel.style.boxShadow = '0 0 0 9px #F7931A'; 
+                sel.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
+            } 
+        }
+
+        function handleFiatConversion(source) {
+            if(!currentUsdInrRate) return;
+            const usd = document.getElementById('fiat-usd'), inr = document.getElementById('fiat-inr');
+            if (source === 'usd') {
+                const v = parseFloat(usd.value.replace(/,/g, ''));
+                inr.value = isNaN(v) ? '' : (v * currentUsdInrRate).toLocaleString('en-US', {minimumFractionDigits:2});
+            } else {
+                const v = parseFloat(inr.value.replace(/,/g, ''));
+                usd.value = isNaN(v) ? '' : (v / currentUsdInrRate).toLocaleString('en-US', {minimumFractionDigits:2});
+            }
+        }
+        function resetFiat() { 
+            const usd = document.getElementById('fiat-usd');
+            const inr = document.getElementById('fiat-inr');
+            if(usd) usd.value = ''; 
+            if(inr) inr.value = ''; 
+        }
+
+        // --- DCA CALCULATOR ---
+        function calculateDCA() {
+            const entries = document.querySelectorAll('.dca-entry');
+            let ti = 0, tc = 0, pr = [], ap = [], inv = [];
+            
+            entries.forEach(e => {
+                const pStr = e.querySelector('.dca-price').value.replace(/,/g, '');
+                const aStr = e.querySelector('.dca-amount').value.replace(/,/g, '');
+                const p = parseFloat(pStr), a = parseFloat(aStr);
+                if (p > 0 && a > 0) { 
+                    ti += a; 
+                    tc += (a / p); 
+                    pr.push(p); 
+                    inv.push(a); 
+                    ap.push(ti / tc); 
+                }
+            });
+            
+            const totalInvEl = document.getElementById('dca-total-invested');
+            const totalCoinsEl = document.getElementById('dca-total-coins');
+            const avgPriceEl = document.getElementById('dca-average-price');
+            
+            if(totalInvEl) totalInvEl.textContent = '$' + ti.toLocaleString('en-US');
+            if(totalCoinsEl) totalCoinsEl.textContent = tc.toLocaleString('en-US', {maximumFractionDigits:6});
+            if(avgPriceEl) avgPriceEl.textContent = '$' + (tc > 0 ? (ti / tc).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : '0.00');
+            
+            const chartContainer = document.getElementById('dca-chart-container');
+            if(chartContainer) {
+                if (pr.length > 0) { 
+                    chartContainer.classList.remove('hidden'); 
+                    updateDCAChart(pr, ap, inv); 
+                }
+                else { 
+                    chartContainer.classList.add('hidden'); 
+                }
+            }
+        }
+
+        let dcaChart = null;
+        function updateDCAChart(prices, avgPrices, investments) {
+            const canvasEl = document.getElementById('dcaChart');
+            if(!canvasEl) return;
+            
+            const ctx = canvasEl.getContext('2d');
+            if (dcaChart) dcaChart.destroy();
+            
+            dcaChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: prices.map((_, i) => `Buy ${i + 1}`),
+                    datasets: [
+                        { label: 'Avg Price ($)', data: avgPrices, borderColor: '#4ade80', backgroundColor: '#4ade80', borderWidth: 3, tension: 0.3, yAxisID: 'y', order: 1 },
+                        { type: 'bar', label: 'USDC', data: investments, backgroundColor: 'rgba(167, 139, 250, 0.4)', yAxisID: 'y1', order: 3 }
+                    ]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    scales: { 
+                        x: { ticks: { color: 'white' } }, 
+                        y: { ticks: { color: 'white' } }, 
+                        y1: { position: 'right', grid: { display: false }, ticks: { color: 'white' } } 
+                    }, 
+                    plugins: { legend: { labels: { color: 'white' } } } 
+                }
+            });
+        }
+        
+        function resetDCA() { 
+            const container = document.getElementById('dca-entries'); 
+            if(!container) return; 
+            container.innerHTML = ''; 
+            addDCAEntry(true); 
+            addDCAEntry(); 
+            calculateDCA();
+        }
+        
+        function addDCAEntry(isFirst = false) {
+            const container = document.getElementById('dca-entries'); 
+            if(!container) return;
+            
+            const html = `
+                <div class="dca-entry flex flex-col md:flex-row gap-4 items-end bg-purple-900/10 p-4 rounded-xl border border-purple-400/20">
+                    <div class="w-full">
+                        <label class="block text-xs font-bold text-white mb-1 uppercase">Price</label>
+                        <input type="text" inputmode="decimal" class="dca-price input-field w-full rounded-xl py-2 px-4" placeholder="0.00">
+                    </div>
+                    <div class="w-full">
+                        <label class="block text-xs font-bold text-white mb-1 uppercase">USDC</label>
+                        <input type="text" inputmode="decimal" class="dca-amount input-field w-full rounded-xl py-2 px-4" placeholder="0.00">
+                    </div>
+                    ${isFirst ? '<div class="w-10"></div>' : '<button onclick="this.closest(\'.dca-entry\').remove(); calculateDCA();" class="p-2 text-red-400 hover:text-red-300 transition-colors"><i class="fa-solid fa-trash"></i></button>'}
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+        }
+    </script>
+</body>
+</html>
