@@ -730,27 +730,33 @@
         async function fetchLivePrice(id, symbol) {
             try {
                 let p = 0;
-                if (id === 'hype') p = 39.36 + (Math.random() * 1.5 - 0.75);
-                else { 
-                    const r = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`); 
+                if (id === 'hype') {
+                    p = 39.36 + (Math.random() * 1.5 - 0.75);
+                } else { 
+                    // Using Coinbase API to bypass Binance ISP blockades
+                    const r = await fetch(`https://api.coinbase.com/v2/prices/${symbol}/spot`); 
+                    if (!r.ok) throw new Error('API Rate Limit');
                     const d = await r.json(); 
-                    p = parseFloat(d.price); 
+                    p = parseFloat(d.data.amount); 
                 }
                 if (p > 0) { 
                     livePrices[id] = p; 
                     const el = document.getElementById(`live-${id}-price`); 
-                    if(el) el.textContent = p.toLocaleString('en-US', {minimumFractionDigits: 2}); 
+                    if(el) el.textContent = p.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}); 
                     if(id === 'btc') runSimulation();
                 }
-            } catch (e) {}
+            } catch (e) {
+                const el = document.getElementById(`live-${id}-price`); 
+                if (el && el.textContent === '...') el.textContent = 'Error';
+            }
         }
         
         function fetchAllLivePrices() { 
-            [{id:'btc',s:'BTCUSDT'},{id:'eth',s:'ETHUSDT'},{id:'sol',s:'SOLUSDT'},{id:'hype',s:'HYPEUSDT'},{id:'link',s:'LINKUSDT'}].forEach(c => fetchLivePrice(c.id, c.s)); 
+            [{id:'btc',s:'BTC-USD'},{id:'eth',s:'ETH-USD'},{id:'sol',s:'SOL-USD'},{id:'hype',s:'HYPE-USD'},{id:'link',s:'LINK-USD'}].forEach(c => fetchLivePrice(c.id, c.s)); 
         }
         
         function refreshSingleLivePrice(id) { 
-            const cfg = {btc:'BTCUSDT',eth:'ETHUSDT',sol:'SOLUSDT',hype:'HYPEUSDT',link:'LINKUSDT'}; 
+            const cfg = {btc:'BTC-USD',eth:'ETH-USD',sol:'SOL-USD',hype:'HYPE-USD',link:'LINK-USD'}; 
             fetchLivePrice(id, cfg[id]); 
             const icon = document.querySelector(`button[onclick*="refreshSingleLivePrice('${id}')"] i`);
             if (icon) { icon.classList.add('animate-spin'); setTimeout(() => icon.classList.remove('animate-spin'), 500); }
@@ -783,7 +789,7 @@
             if(!pEl) return;
             const p = pEl.textContent; 
             const i = document.getElementById(`${id}-initial`); 
-            if(i && p !== '...') { 
+            if(i && p !== '...' && p !== 'Error') { 
                 i.value = p; 
                 i.dispatchEvent(new Event('input')); 
             } 
