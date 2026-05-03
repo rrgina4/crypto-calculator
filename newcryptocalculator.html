@@ -439,13 +439,18 @@
         window.addEventListener('load', () => {
             // Setup Date Pickers
             const daySel = document.getElementById('wi-day');
-            for(let i=1; i<=31; i++) daySel.add(new Option(i.toString().padStart(2,'0'), i.toString().padStart(2,'0')));
+            if(daySel) {
+                for(let i=1; i<=31; i++) daySel.add(new Option(i.toString().padStart(2,'0'), i.toString().padStart(2,'0')));
+            }
             const yearSel = document.getElementById('wi-year');
-            for(let i=new Date().getFullYear(); i>=2013; i--) yearSel.add(new Option(i, i));
+            if(yearSel) {
+                for(let i=new Date().getFullYear(); i>=2013; i--) yearSel.add(new Option(i, i));
+            }
             
-            daySel.value = "01"; 
-            document.getElementById('wi-month').value = "01"; 
-            yearSel.value = "2020";
+            if(daySel) daySel.value = "01"; 
+            const monthSel = document.getElementById('wi-month');
+            if(monthSel) monthSel.value = "01"; 
+            if(yearSel) yearSel.value = "2020";
 
             fetchAllLivePrices(); 
             fetchLiveFiatPrice(); 
@@ -456,13 +461,18 @@
 
             // Debounce Date changes 
             ['wi-day', 'wi-month', 'wi-year'].forEach(id => {
-                document.getElementById(id).addEventListener('change', () => {
-                    const statusEl = document.getElementById('wi-hist-price');
-                    statusEl.textContent = "Waiting...";
-                    statusEl.className = "text-gray-500 animate-pulse";
-                    clearTimeout(histFetchTimeout);
-                    histFetchTimeout = setTimeout(fetchHistoricalPrice, 600);
-                });
+                const el = document.getElementById(id);
+                if(el) {
+                    el.addEventListener('change', () => {
+                        const statusEl = document.getElementById('wi-hist-price');
+                        if(statusEl) {
+                            statusEl.textContent = "Waiting...";
+                            statusEl.className = "text-gray-500 animate-pulse";
+                        }
+                        clearTimeout(histFetchTimeout);
+                        histFetchTimeout = setTimeout(fetchHistoricalPrice, 600);
+                    });
+                }
             });
             
             const wiAmtInp = document.getElementById('wi-amount');
@@ -481,9 +491,13 @@
                 ids.forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.addEventListener('input', () => {
-                        const startVal = document.getElementById(`${coin}-initial`).value.replace(/,/g, '');
-                        const targetVal = document.getElementById(`${coin}-target`).value.replace(/,/g, '');
-                        const investVal = document.getElementById(`${coin}-investment`).value.replace(/,/g, '');
+                        const initEl = document.getElementById(`${coin}-initial`);
+                        const targEl = document.getElementById(`${coin}-target`);
+                        const invEl = document.getElementById(`${coin}-investment`);
+                        
+                        const startVal = initEl ? initEl.value.replace(/,/g, '') : '';
+                        const targetVal = targEl ? targEl.value.replace(/,/g, '') : '';
+                        const investVal = invEl ? invEl.value.replace(/,/g, '') : '';
                         
                         const start = parseFloat(startVal), target = parseFloat(targetVal), invest = parseFloat(investVal);
                         const incEl = document.getElementById(`${coin}-increase`), profEl = document.getElementById(`${coin}-profit`);
@@ -512,20 +526,27 @@
             const dcaContainer = document.getElementById('dca-entries');
             if(dcaContainer) {
                 resetDCA();
-                dcaContainer.addEventListener('input', calculateDCA);
             }
         });
 
         // --- FETCH HISTORICAL BTC PRICE ---
         async function fetchHistoricalPrice() {
-            const day = document.getElementById('wi-day').value;
-            const month = document.getElementById('wi-month').value;
-            const year = document.getElementById('wi-year').value;
+            const dayEl = document.getElementById('wi-day');
+            const monthEl = document.getElementById('wi-month');
+            const yearEl = document.getElementById('wi-year');
+            
+            if(!dayEl || !monthEl || !yearEl) return;
+            
+            const day = dayEl.value;
+            const month = monthEl.value;
+            const year = yearEl.value;
             const dateParam = `${day}-${month}-${year}`;
             const statusEl = document.getElementById('wi-hist-price');
             
-            statusEl.textContent = "Loading...";
-            statusEl.className = "text-amber-500 animate-pulse";
+            if(statusEl) {
+                statusEl.textContent = "Loading...";
+                statusEl.className = "text-amber-500 animate-pulse";
+            }
 
             try {
                 const selectedDate = new Date(`${year}-${month}-${day}`);
@@ -533,8 +554,10 @@
                 
                 if (selectedDate > now) {
                     historicalPriceBtc = livePrices.btc;
-                    statusEl.textContent = `(Live) $${(historicalPriceBtc||0).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-                    statusEl.className = "text-white font-black";
+                    if(statusEl) {
+                        statusEl.textContent = `(Live) $${(historicalPriceBtc||0).toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                        statusEl.className = "text-white font-black";
+                    }
                     runSimulation();
                     return;
                 }
@@ -542,8 +565,10 @@
                 const res = await fetch(`https://api.coingecko.com/api/v3/coins/bitcoin/history?date=${dateParam}&localization=false`);
                 
                 if (!res.ok) {
-                    statusEl.textContent = "ERROR (API LIMIT)";
-                    statusEl.className = "text-red-500 font-black text-[9px]";
+                    if(statusEl) {
+                        statusEl.textContent = "ERROR (API LIMIT)";
+                        statusEl.className = "text-red-500 font-black text-[9px]";
+                    }
                     historicalPriceBtc = 0;
                     runSimulation();
                     return;
@@ -552,21 +577,29 @@
                 const data = await res.json();
                 if (data && data.market_data) {
                     historicalPriceBtc = data.market_data.current_price.usd;
-                    statusEl.textContent = `$${historicalPriceBtc.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-                    statusEl.className = "text-white font-black";
+                    if(statusEl) {
+                        statusEl.textContent = `$${historicalPriceBtc.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+                        statusEl.className = "text-white font-black";
+                    }
                 } else if (parseInt(year) < 2013) {
-                    statusEl.textContent = "Before BTC Trading";
-                    statusEl.className = "text-red-500 font-black text-[9px]";
+                    if(statusEl) {
+                        statusEl.textContent = "Before BTC Trading";
+                        statusEl.className = "text-red-500 font-black text-[9px]";
+                    }
                     historicalPriceBtc = 0;
                 } else {
-                    statusEl.textContent = "Approx $13.50";
-                    statusEl.className = "text-gray-400 font-black";
+                    if(statusEl) {
+                        statusEl.textContent = "Approx $13.50";
+                        statusEl.className = "text-gray-400 font-black";
+                    }
                     historicalPriceBtc = 13.50; 
                 }
                 runSimulation();
             } catch (e) { 
-                statusEl.textContent = "ERROR"; 
-                statusEl.className = "text-red-500 font-black";
+                if(statusEl) {
+                    statusEl.textContent = "ERROR"; 
+                    statusEl.className = "text-red-500 font-black";
+                }
                 historicalPriceBtc = 0; 
                 runSimulation();
             }
@@ -574,14 +607,18 @@
 
         // --- TIME MACHINE SIMULATION ---
         function runSimulation() {
-            const val = parseFloat(document.getElementById('wi-amount').value.replace(/,/g, ''));
+            const amtEl = document.getElementById('wi-amount');
+            if(!amtEl) return;
+            
+            const val = parseFloat(amtEl.value.replace(/,/g, ''));
             const resBtc = document.getElementById('res-btc-owned'), resVal = document.getElementById('res-val-today');
             const resPnl = document.getElementById('res-pnl'), resPerc = document.getElementById('res-perc');
 
             if (isNaN(val) || val <= 0 || historicalPriceBtc <= 0 || livePrices.btc <= 0) {
-                resBtc.textContent = "0.000000"; resVal.textContent = "$0.00"; resPnl.textContent = "$0.00"; resPerc.textContent = "0%";
-                resPerc.className = `text-xs font-black text-gray-500`;
-                resPnl.className = `text-xs font-black text-gray-500`;
+                if(resBtc) resBtc.textContent = "0.000000"; 
+                if(resVal) resVal.textContent = "$0.00"; 
+                if(resPnl) { resPnl.textContent = "$0.00"; resPnl.className = `text-xs font-black text-gray-500`; }
+                if(resPerc) { resPerc.textContent = "0%"; resPerc.className = `text-xs font-black text-gray-500`; }
                 return;
             }
 
@@ -590,19 +627,20 @@
             const pnlUsd = valTodayUsd - val;
             const perc = ((livePrices.btc - historicalPriceBtc) / historicalPriceBtc) * 100;
 
-            resBtc.textContent = btcOwned.toLocaleString('en-US', {maximumFractionDigits: 6});
-            resVal.textContent = `$${valTodayUsd.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
-            resPnl.textContent = `${pnlUsd >= 0 ? '+' : '-'}$${Math.abs(pnlUsd).toLocaleString('en-US', {maximumFractionDigits: 0})}`;
-            resPerc.textContent = `${perc >= 0 ? '+' : ''}${perc.toFixed(0)}%`;
+            if(resBtc) resBtc.textContent = btcOwned.toLocaleString('en-US', {maximumFractionDigits: 6});
+            if(resVal) resVal.textContent = `$${valTodayUsd.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
+            if(resPnl) resPnl.textContent = `${pnlUsd >= 0 ? '+' : '-'}$${Math.abs(pnlUsd).toLocaleString('en-US', {maximumFractionDigits: 0})}`;
+            if(resPerc) resPerc.textContent = `${perc >= 0 ? '+' : ''}${perc.toFixed(0)}%`;
             
             const color = pnlUsd >= 0 ? 'text-green-400' : 'text-red-400';
-            resPerc.className = `text-xs font-black ${color}`;
-            resPnl.className = `text-xs font-black ${color}`;
+            if(resPerc) resPerc.className = `text-xs font-black ${color}`;
+            if(resPnl) resPnl.className = `text-xs font-black ${color}`;
         }
 
         // --- NUMBER RAIN ANIMATION ---
         function startMatrixEffect() {
             const canvas = document.getElementById('matrix-canvas');
+            if(!canvas) return;
             const ctx = canvas.getContext('2d');
             canvas.style.display = 'block';
             
@@ -639,33 +677,53 @@
         // --- NAVIGATION ---
         function openCalculator() { 
             document.body.style.backgroundColor = '#23292F'; 
-            document.getElementById('matrix-canvas').style.display = 'none'; 
-            document.getElementById('monkey-container').classList.remove('!hidden'); 
+            const canvas = document.getElementById('matrix-canvas');
+            if(canvas) canvas.style.display = 'none'; 
+            const monkey = document.getElementById('monkey-container');
+            if(monkey) monkey.classList.remove('!hidden'); 
+            
             document.getElementById('landing-page').classList.add('hidden'); 
-            document.getElementById('calculator-app').classList.remove('hidden'); 
-            setTimeout(() => document.getElementById('calculator-app').classList.remove('opacity-0'), 50); 
+            const app = document.getElementById('calculator-app');
+            if(app) {
+                app.classList.remove('hidden'); 
+                setTimeout(() => app.classList.remove('opacity-0'), 50); 
+            }
             confetti({ particleCount: 150, zIndex: 1000 }); 
         }
         
         function openWhatIf() { 
             document.body.style.backgroundColor = '#000000'; 
-            document.getElementById('monkey-container').classList.add('!hidden'); 
+            const monkey = document.getElementById('monkey-container');
+            if(monkey) monkey.classList.add('!hidden'); 
             document.getElementById('landing-page').classList.add('hidden'); 
-            document.getElementById('what-if-app').classList.remove('hidden'); 
-            setTimeout(() => { 
-                document.getElementById('what-if-app').classList.remove('opacity-0'); 
-                startMatrixEffect(); 
-            }, 50); 
+            
+            const wiApp = document.getElementById('what-if-app');
+            if(wiApp) {
+                wiApp.classList.remove('hidden'); 
+                setTimeout(() => { 
+                    wiApp.classList.remove('opacity-0'); 
+                    startMatrixEffect(); 
+                }, 50);
+            }
         }
         
         function goBackToLanding() { 
             if(matrixInterval) clearInterval(matrixInterval); 
             document.body.style.backgroundColor = '#23292F'; 
-            document.getElementById('matrix-canvas').style.display = 'none'; 
-            document.getElementById('monkey-container').classList.remove('!hidden'); 
-            document.getElementById('calculator-app').classList.add('hidden'); 
-            document.getElementById('what-if-app').classList.add('hidden'); 
-            document.getElementById('landing-page').classList.remove('hidden'); 
+            const canvas = document.getElementById('matrix-canvas');
+            if(canvas) canvas.style.display = 'none'; 
+            
+            const monkey = document.getElementById('monkey-container');
+            if(monkey) monkey.classList.remove('!hidden'); 
+            
+            const calcApp = document.getElementById('calculator-app');
+            if(calcApp) calcApp.classList.add('hidden'); 
+            
+            const wiApp = document.getElementById('what-if-app');
+            if(wiApp) wiApp.classList.add('hidden'); 
+            
+            const landing = document.getElementById('landing-page');
+            if(landing) landing.classList.remove('hidden'); 
         }
 
         // --- GLOBAL APIS ---
@@ -721,7 +779,9 @@
         function setInvestment(c, v) { setInputVal(`${c}-investment`, v); }
         
         function useLivePrice(id) { 
-            const p = document.getElementById(`live-${id}-price`).textContent; 
+            const pEl = document.getElementById(`live-${id}-price`);
+            if(!pEl) return;
+            const p = pEl.textContent; 
             const i = document.getElementById(`${id}-initial`); 
             if(i && p !== '...') { 
                 i.value = p; 
@@ -753,6 +813,8 @@
         function handleFiatConversion(source) {
             if(!currentUsdInrRate) return;
             const usd = document.getElementById('fiat-usd'), inr = document.getElementById('fiat-inr');
+            if(!usd || !inr) return;
+            
             if (source === 'usd') {
                 const v = parseFloat(usd.value.replace(/,/g, ''));
                 inr.value = isNaN(v) ? '' : (v * currentUsdInrRate).toLocaleString('en-US', {minimumFractionDigits:2});
@@ -774,8 +836,12 @@
             let ti = 0, tc = 0, pr = [], ap = [], inv = [];
             
             entries.forEach(e => {
-                const pStr = e.querySelector('.dca-price').value.replace(/,/g, '');
-                const aStr = e.querySelector('.dca-amount').value.replace(/,/g, '');
+                const pEl = e.querySelector('.dca-price');
+                const aEl = e.querySelector('.dca-amount');
+                if(!pEl || !aEl) return;
+                
+                const pStr = pEl.value.replace(/,/g, '');
+                const aStr = aEl.value.replace(/,/g, '');
                 const p = parseFloat(pStr), a = parseFloat(aStr);
                 if (p > 0 && a > 0) { 
                     ti += a; 
@@ -843,7 +909,38 @@
             addDCAEntry(true); 
             addDCAEntry(); 
             calculateDCA();
+            
+            // Add listener to the container once
+            container.removeEventListener('input', dcaInputHandler);
+            container.addEventListener('input', dcaInputHandler);
         }
+        
+        function dcaInputHandler(e) {
+            if(e.target.tagName === 'INPUT') {
+                const clean = e.target.value.replace(/,/g, '');
+                if(!isNaN(clean) && clean !== "") {
+                    // Temporarily store cursor position to prevent jumping
+                    const pos = e.target.selectionStart;
+                    const oldLen = e.target.value.length;
+                    
+                    e.target.value = parseFloat(clean).toLocaleString('en-US');
+                    
+                    // Adjust cursor position based on added/removed commas
+                    const newLen = e.target.value.length;
+                    e.target.setSelectionRange(pos + (newLen - oldLen), pos + (newLen - oldLen));
+                }
+            }
+            calculateDCA();
+        }
+        
+        // Expose remove function globally for inline onclick
+        window.removeDCAEntry = function(btn) {
+            const entry = btn.closest('.dca-entry');
+            if(entry) {
+                entry.remove();
+                calculateDCA();
+            }
+        };
         
         function addDCAEntry(isFirst = false) {
             const container = document.getElementById('dca-entries'); 
@@ -859,7 +956,7 @@
                         <label class="block text-xs font-bold text-white mb-1 uppercase">USDC</label>
                         <input type="text" inputmode="decimal" class="dca-amount input-field w-full rounded-xl py-2 px-4" placeholder="0.00">
                     </div>
-                    ${isFirst ? '<div class="w-10"></div>' : '<button onclick="this.closest(\'.dca-entry\').remove(); calculateDCA();" class="p-2 text-red-400 hover:text-red-300 transition-colors"><i class="fa-solid fa-trash"></i></button>'}
+                    ${isFirst ? '<div class="w-10"></div>' : '<button onclick="window.removeDCAEntry(this)" class="p-2 text-red-400 hover:text-red-300 transition-colors"><i class="fa-solid fa-trash"></i></button>'}
                 </div>
             `;
             container.insertAdjacentHTML('beforeend', html);
