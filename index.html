@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Profit Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Added Philosopher font for the 'Wise Monkey' vibe */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Philosopher:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #23292F; 
+            overflow-x: hidden;
+        }
+
+        .font-philosopher {
+            font-family: 'Philosopher', sans-serif;
+        }
+        
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            opacity: 1;
+            height: 24px;
+        }
+        
+        .crypto-card {
+            background-color: #e4e7ec;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+        
+        .input-field {
+            background-color: #f8fafc;
+        }
+        
+        .results-box {
+            background-color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* --- Meditating Monkey Background Animations --- */
+        .monkey-bg {
+            position: fixed;
+            top: 20px;
+            right: 2vw;
+            width: 350px;
+            height: 350px;
+            z-index: 0;
+            pointer-events: none;
+            filter: drop-shadow(0 15px 25px rgba(0,0,0,0.25));
+        }
+
+        .monkey-bg svg {
+            animation: levitate 6s infinite ease-in-out;
+            overflow: visible;
+        }
+
+        @keyframes levitate {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.05); opacity: 0.95; }
+        }
+
+        .aura-circle {
+            transform-origin: 200px 200px;
+            animation: pulseGlow 6s infinite ease-in-out;
+        }
+
+    </style>
+</head>
+<body class="min-h-screen p-6 md:p-12 relative">
+
+    <!-- Wise Meditating Monkey Background -->
+    <div class="monkey-bg hidden md:block">
+        <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <!-- Robe Gradients -->
+                <linearGradient id="robeBase" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#f39c12"/>
+                    <stop offset="50%" stop-color="#d35400"/>
+                    <stop offset="100%" stop-color="#a04000"/>
+                </linearGradient>
+                <linearGradient id="robeDark" x1="0%" y1="100%" x2="0%" y2="0%">
+                    <stop offset="0%" stop-color="#873600"/>
+                    <stop offset="100%" stop-color="#d35400"/>
+                </linearGradient>
+                <!-- Fur & Skin Gradients -->
+                <radialGradient id="furGrad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#5d4037"/>
+                    <stop offset="80%" stop-color="#3e2723"/>
+                    <stop offset="100%" stop-color="#1b100b"/>
+                </radialGradient>
+                <radialGradient id="skinGrad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#e3b98c"/>
+                    <stop offset="70%" stop-color="#c49a6c"/>
+                    <stop offset="100%" stop-color="#8d6e63"/>
+                </radialGradient>
+                <!-- Beard/Hair Gradient -->
+                <linearGradient id="beardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="40%" stop-color="#f5f5f5"/>
+                    <stop offset="100%" stop-color="#bdbdbd"/>
+                </linearGradient>
+                <!-- Shadows -->
+                <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+                    <feDropShadow dx="0" dy="5" stdDeviation="4" flood-opacity="0.4"/>
+                </filter>
+            </defs>
+
+            <!-- Glowing Aura Backdrop -->
+            <circle class="aura-circle" cx="200" cy="180" r="140" fill="#ffecb3" />
+
+            <!-- === LOWER BODY: Crossed Legs === -->
+            <!-- Back shadow of legs -->
+            <path d="M 40 330 C 40 380, 360 380, 360 330 C 360 290, 300 290, 200 290 C 100 290, 40 290, 40 330 Z" fill="#873600" filter="url(#shadow)"/>
+            <!-- Front draped legs -->
+            <path d="M 60 330 C 60 365, 340 365, 340 330 C 340 300, 280 290, 200 290 C 120 290, 60 300, 60 330 Z" fill="url(#robeBase)"/>
+            <!-- Leg Robe Folds -->
+            <path d="M 100 310 Q 150 340 200 340 Q 250 340 300 310" fill="none" stroke="#a04000" stroke-width="4" stroke-linecap="round"/>
+            <path d="M 80 330 Q 150 355 200 355 Q 250 355 320 330" fill="none" stroke="#a04000" stroke-width="3" stroke-linecap="round"/>
+
+            <!-- === UPPER BODY: Torso & Robe === -->
+            <path d="M 120 200 L 280 200 L 300 310 C 250 330, 150 330, 100 310 Z" fill="url(#robeDark)"/>
+            <!-- Robe draped over shoulders -->
+            <path d="M 100 220 C 100 180, 150 170, 150 170 C 150 170, 180 250, 200 320 C 150 320, 90 280, 100 220 Z" fill="url(#robeBase)"/>
+            <path d="M 300 220 C 300 180, 250 170, 250 170 C 250 170, 220 250, 200 320 C 250 320, 310 280, 300 220 Z" fill="url(#robeBase)"/>
+            
+            <!-- Torso Folds -->
+            <path d="M 130 200 C 150 240, 170 280, 180 310" fill="none" stroke="#a04000" stroke-width="5" stroke-linecap="round"/>
+            <path d="M 270 200 C 250 240, 230 280, 220 310" fill="none" stroke="#a04000" stroke-width="5" stroke-linecap="round"/>
+            <path d="M 150 220 Q 170 260 190 310" fill="none" stroke="#d35400" stroke-width="3" stroke-linecap="round"/>
+
+            <!-- === ARMS & HANDS === -->
+            <!-- Furry Forearms -->
+            <path d="M 110 240 C 90 280, 140 300, 180 315" stroke="url(#furGrad)" stroke-width="22" stroke-linecap="round" fill="none"/>
+            <path d="M 290 240 C 310 280, 260 300, 220 315" stroke="url(#furGrad)" stroke-width="22" stroke-linecap="round" fill="none"/>
+            <!-- Hands in Dhyana Mudra (Meditation Pose) -->
+            <ellipse cx="200" cy="318" rx="28" ry="14" fill="url(#skinGrad)" filter="url(#shadow)"/>
+            <path d="M 185 312 Q 200 306 215 312" fill="none" stroke="#8d6e63" stroke-width="2.5" stroke-linecap="round"/> <!-- Thumbs touching -->
+            <path d="M 180 322 Q 200 326 220 322" fill="none" stroke="#8d6e63" stroke-width="1.5" stroke-linecap="round"/> <!-- Finger separation -->
+
+            <!-- === HEAD & FACE === -->
+            <!-- Ears -->
+            <g filter="url(#shadow)">
+                <ellipse cx="130" cy="150" rx="20" ry="30" fill="url(#skinGrad)" transform="rotate(-15 130 150)"/>
+                <path d="M 125 140 Q 140 150 125 160" fill="none" stroke="#8d6e63" stroke-width="3" stroke-linecap="round"/>
+                
+                <ellipse cx="270" cy="150" rx="20" ry="30" fill="url(#skinGrad)" transform="rotate(15 270 150)"/>
+                <path d="M 275 140 Q 260 150 275 160" fill="none" stroke="#8d6e63" stroke-width="3" stroke-linecap="round"/>
+            </g>
+
+            <!-- Skull / Back of head -->
+            <ellipse cx="200" cy="140" rx="60" ry="65" fill="url(#furGrad)" filter="url(#shadow)"/>
+
+            <!-- Wise Top Hair Bun/Tuft -->
+            <path d="M 175 90 C 175 60, 200 45, 200 45 C 200 45, 225 60, 225 90 Z" fill="url(#beardGrad)" filter="url(#shadow)"/>
+            <path d="M 185 85 Q 200 65 215 85" fill="none" stroke="#bdbdbd" stroke-width="2"/>
+
+            <!-- Face Mask -->
+            <path d="M 160 125 C 160 100, 240 100, 240 125 C 240 160, 220 185, 200 185 C 180 185, 160 160, 160 125 Z" fill="url(#skinGrad)" filter="url(#shadow)"/>
+
+            <!-- Deep Brow Ridge -->
+            <path d="M 160 125 Q 180 115 200 130 Q 220 115 240 125" fill="none" stroke="#8d6e63" stroke-width="6" stroke-linecap="round"/>
+
+            <!-- Eyes (Half-closed, Zen state) -->
+            <path d="M 170 140 Q 180 137 190 142" fill="none" stroke="#3e2723" stroke-width="3" stroke-linecap="round"/>
+            <path d="M 210 142 Q 220 137 230 140" fill="none" stroke="#3e2723" stroke-width="3" stroke-linecap="round"/>
+            
+            <!-- Under-eye wise wrinkles -->
+            <path d="M 172 146 Q 180 148 188 146" fill="none" stroke="#a1887f" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M 212 146 Q 220 148 228 146" fill="none" stroke="#a1887f" stroke-width="1.5" stroke-linecap="round"/>
+
+            <!-- Snout -->
+            <ellipse cx="200" cy="170" rx="30" ry="20" fill="#d7ccc8" opacity="0.4"/>
+            <!-- Nose -->
+            <path d="M 192 165 Q 200 160 208 165 L 204 172 Q 200 175 196 172 Z" fill="#3e2723"/>
+
+            <!-- Mouth (Neutral, slightly downturned at edges) -->
+            <path d="M 185 182 Q 200 180 215 182" fill="none" stroke="#3e2723" stroke-width="2" stroke-linecap="round"/>
+
+        </svg>
+    </div>
+
+    <!-- Main Content Wrapper (Elevated above background) -->
+    <div class="max-w-4xl mx-auto space-y-6 relative z-10">
+
+        <div class="text-center mb-10 mt-4">
+            <!-- Colourful Gradient Title with normal case -->
+            <h1 class="text-4xl md:text-5xl font-bold font-philosopher text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-emerald-400 to-blue-400 mb-4 tracking-tight">
+                Welcome to Crypto Profit Calculator
+            </h1>
+            <p class="text-gray-300 font-semibold max-w-2xl mx-auto mb-6 text-sm md:text-base leading-relaxed">
+                Here you can calculate the expected percentage gains and profits for 5 different coins when they reach your target prices.
+            </p>
+            
+            <div class="flex flex-col items-center gap-3">
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Select a coin to calculate:</span>
+                <div class="flex justify-center gap-2 flex-wrap">
+                    <button onclick="highlightCard('btc')" class="px-4 py-1.5 bg-[#F7931A] text-white rounded-lg text-sm font-bold shadow-sm hover:-translate-y-1 hover:shadow-md transition-all cursor-pointer focus:outline-none">BTC</button>
+                    <button onclick="highlightCard('eth')" class="px-4 py-1.5 bg-blue-400 text-white rounded-lg text-sm font-bold shadow-sm hover:-translate-y-1 hover:shadow-md transition-all cursor-pointer focus:outline-none">ETH</button>
+                    <button onclick="highlightCard('sol')" class="px-4 py-1.5 bg-[#4ade80] text-emerald-950 rounded-lg text-sm font-bold shadow-sm hover:-translate-y-1 hover:shadow-md transition-all cursor-pointer focus:outline-none">SOL</button>
+                    <button onclick="highlightCard('hype')" class="px-4 py-1.5 bg-[#97FCE4] text-gray-800 rounded-lg text-sm font-bold shadow-sm hover:-translate-y-1 hover:shadow-md transition-all cursor-pointer focus:outline-none">HYPE</button>
+                    <button onclick="highlightCard('link')" class="px-4 py-1.5 bg-[#2A5ADA] text-white rounded-lg text-sm font-bold shadow-sm hover:-translate-y-1 hover:shadow-md transition-all cursor-pointer focus:outline-none">LINK</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="card-btc" class="crypto-card rounded-2xl p-6 md:p-8 transition-all duration-300 relative" style="background-color: #F7931A;">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-white flex items-center gap-2 tracking-wide">
+                    <i class="fa-brands fa-bitcoin text-orange-200"></i> BTC
+                </h2>
+                <button onclick="resetCard('btc')" class="text-xs font-bold bg-white/30 hover:bg-white/50 text-orange-950 px-3 py-1.5 rounded-md transition-colors tracking-wider focus:outline-none">Reset</button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div>
+                    <label class="block text-xs font-extrabold text-orange-950 mb-2 tracking-wider">BTC Current Price</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
+                        <input type="number" id="btc-initial" class="input-field w-full rounded-xl py-3 pl-8 pr-2 text-gray-800 font-bold focus:ring-2 focus:ring-white outline-none transition-all" value="0.00" step="0.01">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-extrabold text-orange-950 mb-2 tracking-wider">BTC Target Price</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
+                        <input type="number" id="btc-target" class="input-field w-full rounded-xl py-3 pl-8 pr-2 text-gray-800 font-bold focus:ring-2 focus:ring-white outline-none transition-all" value="0.00" step="0.01">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-extrabold text-orange-950 mb-2 tracking-wider">USDC Investment</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
+                        <input type="number" id="btc-investment" class="input-field w-full rounded-xl py-3 pl-8 pr-2 text-gray-800 font-bold focus:ring-2 focus:ring-white outline-none transition-all" value="0.00" step="0.01">
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-box rounded-xl p-5 flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-12">
+                <div class="flex items-center gap-3 w-full md:w-1/2">
+                    <span class="text-sm font-bold text-orange-900">% Increase:</span>
+                    <span id="btc-increase" class="font-bold text-gray-900 text-lg">--</span>
+                </div>
+                <div class="hidden md:block w-px h-6 bg-orange-300"></div>
+                <div class="flex items-center gap-3 w-full md:w-1/2">
+                    <span class="text-sm font-bold text-orange-900">$ Expected Profit:</span>
+                    <span id="btc-profit" class="font-bold text-gray-900 text-lg">--</span>
+                </div>
+            </div>
+            <p class="mt-4 text-center text-xs font-medium text-orange-950 opacity-75">insert numbers without comma in the box</p>
+        </div>
+
+        <div id="card-eth" class="crypto-card rounded-2xl p-6 md:p-8 transition-all duration-300 relative" style="background-color: #93c5fd;">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-blue-900 flex items-center gap-2 tracking-wide">
+                    <i class="fa-brands fa-ethereum text-blue-700"></i> ETH
+                </h2>
+                <button onclick="resetCard('eth')" class="text-xs font-bold bg-white/40 hover:bg-white/60 text-blue-950 px-3 py-1.5 rounded-md transition-colors tracking-wider focus:outline-none">Reset</button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div>
+                    <label class="block text-xs font-extrabold text-blue-900 mb-2 tracking-wider">ETH Current Price</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
+                        <input type="number" id="eth-initial" class="input-field w-full rounded-xl py-3 pl-8 pr-2 text-gray-800 font-bold focus:ring-2 focus:ring-white outline-none transition-all" value="0.00" step="0.01">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-extrabold text-blue-900 mb-2 tracking-wider">ETH Target Price</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
+                        <input type="number" id="eth-target" class="input-field w-full rounded-xl py-3 pl-8 pr-2 text-gray-800 font-bold focus:ring-2 focus:ring-white outline-none transition-all" value="0.00" step="0.01">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-extrabold text-blue-900 mb-2 tracking-wider">USDC Investment</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
+                        <input type="number" id="eth-investment" class="input-field w-full rounded-xl py-3 pl-8 pr-2 text-gray-800 font-bold focus:ring-2 focus:ring-white outline-none transition-all" value="0.00" step="0.01">
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-box rounded-xl p-5 flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-12">
+                <div class="flex items-center gap-3 w-full md:w-1/2">
+                    <span class="text-sm font-bold text-blue-900">% Increase:</span>
+                    <span id="eth-increase" class="font-bold text-gray-900 text-lg">--</span>
+                </div>
+                <div class="hidden md:block w-px h-6 bg-blue-300"></div>
+                <div class="flex items-center gap-3 w-full md:w-1/2">
+                    <span class="text-sm font-bold text-blue-900">$ Expected Profit:</span>
+                    <span id="eth-profit" class="font-bold text-gray-900 text-lg">--</span>
+                </div>
+            </div>
+            <p class="mt-4 text-center text-xs font-medium text-blue-950 opacity-75">insert numbers without comma in the box</p>
+        </div>
+
+        <div id="card-sol" class="rounded-2xl p-6 md:p-8 transition-all duration-300 shadow-sm border border-emerald-300 relative" style="background-color: #4ade80;">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-emerald-950 flex items-center gap-2 tracking-wide">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-emerald-700 fill-current" viewBox="0 0 394 308">
+                        <path d="M68.5 119C71.4 116.1 75.3 114.5 79.3 114.5H388.6C395.3 114.5 398.7 122.7 393.9 127.5L329.1 192.3C326.3 195.2 322.4 196.8 318.3 196.8H9.1C2.3 196.8 -1.1 188.6 3.7 183.8L68.5 119Z"/>
+                        <path d="M68.5 3.7C71.4 0.9 75.3 -0.8 79.3 -0.8H388.6C395.3 -0.8 398.7 7.4 393.9 12.2L329.1 77C326.3 79.9 322.4 81.5 318.3 81.5H9.1C2.3 81.5 -1.1 73.3 3.7 68.5L68.5 3.7Z"/>
+                        <path d="M329.1 229.8C326.3 226.9 322.4 225.3 318.3 225.3H9.1C2.3 225.3 -1.1 233.5 3.7 238.3L68.5 303.1C71.4 306 75.3 307.6 79.3 307.6H388.6C395.3 307.6 398.7 299.4 393.9 294.6L329.1 229.8Z"/>
+                    </svg> SOL
+                </h2>
+                <button onclick="resetCard('sol')" class="text-xs font-bold bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-950 px-3 py-1.5 rounded-md transition-colors tracking-wider focus:outline-none">Reset</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div>
+                    <label class="block text-xs font-extrabold text-emerald-900 mb-2 tracking-wider">SOL Current Price</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span>
+                        <input type="number" id="sol-initial" class="w-full bg-emerald-50 rounded-xl py-3 pl-8 pr-2 text-gray-800 font-bold focus:ring-2 focus:ring-emerald-600 outline-none transition-all" value="0.00" step="0.01">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-extrabold text-emerald-900 mb-2 tracking-wider">SOL Target Price</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span>
+                        <input type="number" id="sol-target" class="w-full bg-emerald-50 rounded-xl py-3 pl-8 pr-2 text-gray-800 font-bold focus:ring-2 focus:ring-emerald-600 outline-none transition-all" value="0.00" step="0.01">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-extrabold text-emerald-900 mb-2 tracking-wider">USDC Investment</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span>
+                        <input type="number" id="sol-investment" class="w-full bg-emerald-50 rounded-xl py-3 pl-8 pr-2 text-gray-800 font-bold focus:ring-2 focus:ring-emerald-600 outline-none transition-all" value="0.00" step="0.01">
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-box rounded-xl p-5 flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-12 border border-emerald-200/50">
+                <div class="flex items-center gap-3 w-full md:w-1/2">
+                    <span class="text-sm font-bold text-emerald-800">% Increase:</span>
+                    <span id="sol-increase" class="font-bold text-emerald-950 text-lg">--</span>
+                </div>
+                <div class="hidden md:block w-px h-6 bg-emerald-300"></div>
+                <div class="flex items-center gap-3 w-full md:w-1/2">
+                    <span class="text-sm font-bold text-emerald-800">$ Expected Profit:</span>
+                    <span id="sol-profit" class="font-bold text-emerald-950 text-lg">--</span>
+                </div>
+            </div>
+            <p class="mt-4 text-center text-xs font-medium text-emerald-950 opacity-75">insert numbers without comma in the box</p>
+        </div>
+
+        <div id="card-hype" class="crypto-card rounded-2xl p-6 md:p-8 transition-all duration-300 relative" style="background-color: #97FCE4;">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-teal-900 flex items-center gap-2 tracking-wide">
+                    <img src="https://s2.coinmarketcap.com/static/img/coins/64x64/32196.png" alt="Hyperliquid Logo" class="w-6 h-6 rounded-full shadow-sm"> HYPE
+                </h2>
+                <button onclick="resetCard('hype')" class="text-xs font-bold bg-teal-600/10 hover:bg-teal-600/20 text-teal-950 px-3 py-1.5 rounded-md transition-colors tracking-wider focus:outline-none">Reset</button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div>
+                    <label class="block text-xs font-extrabold text-teal-900 mb-2 tracking-wider">HYPE Current Price</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
+                        <input type="number" id="hype-initial" class="input-field w-full rounded-xl py-3 pl-8 pr-2 text-gray-800 font-bold focus:ring-2 focus:ring-white outline-none transition-all" value="39.36" step="0.01">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-extrabold text-teal-900 mb-2 tracking-wider">HYPE Target Price</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
+                        <input type="number" id="hype-target" class="input-field w-full rounded-xl py-3 pl-8 pr-2 text-gray-800 font-bold focus:ring-2 focus:ring-white outline-none transition-all" value="0.00" step="0.01">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-extrabold text-teal-900 mb-2 tracking-wider">USDC Investment</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
+                        <input type="number" id="hype-investment" class="input-field w-full rounded-xl py-3 pl-8 pr-2 text-gray-800 font-bold focus:ring-2 focus:ring-white outline-none transition-all" value="0.00" step="0.01">
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-box rounded-xl p-5 flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-12">
+                <div class="flex items-center gap-3 w-full md:w-1/2">
+                    <span class="text-sm font-bold text-teal-900">% Increase:</span>
+                    <span id="hype-increase" class="font-bold text-gray-900 text-lg">--</span>
+                </div>
+                <div class="hidden md:block w-px h-6 bg-teal-300"></div>
+                <div class="flex items-center gap-3 w-full md:w-1/2">
+                    <span class="text-sm font-bold text-teal-900">$ Expected Profit:</span>
+                    <span id="hype-profit" class="font-bold text-gray-900 text-lg">--</span>
+                </div>
+            </div>
+            <p class="mt-4 text-center text-xs font-medium text-teal-950 opacity-75">insert numbers without comma in the box</p>
+        </div>
+
+        <div id="card-link" class="crypto-card rounded-2xl p-6 md:p-8 transition-all duration-300 relative" style="background-color: #2A5ADA;">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-white flex items-center gap-2 tracking-wide">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-blue-200 fill-current" viewBox="0 0 24 24">
+                        <path d="M12 0l10.392 6v12L12 24 1.608 18V6L12 0zm0 3.32l-7.5 4.33v8.69l7.5 4.34 7.5-4.34v-8.69L12 3.32zm0 3.73l4.28 2.47v4.96L12 16.95l-4.28-2.47V9.52L12 7.05zm0 2.22l-2.36 1.36v2.74L12 14.73l2.36-1.36v-2.74L12 9.27z" />
+                    </svg> LINK
+                </h2>
+                <button onclick="resetCard('link')" class="text-xs font-bold bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-md transition-colors tracking-wider focus:outline-none">Reset</button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div>
+                    <label class="block text-xs font-extrabold text-blue-100 mb-2 tracking-wider">LINK Current Price</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
+                        <input type="number" id="link-initial" class="input-field w-full rounded-xl py-3 pl-8 pr-2 text-gray-800 font-bold focus:ring-2 focus:ring-white outline-none transition-all" value="0.00" step="0.01">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-extrabold text-blue-100 mb-2 tracking-wider">LINK Target Price</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
+                        <input type="number" id="link-target" class="input-field w-full rounded-xl py-3 pl-8 pr-2 text-gray-800 font-bold focus:ring-2 focus:ring-white outline-none transition-all" value="0.00" step="0.01">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-extrabold text-blue-100 mb-2 tracking-wider">USDC Investment</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
+                        <input type="number" id="link-investment" class="input-field w-full rounded-xl py-3 pl-8 pr-2 text-gray-800 font-bold focus:ring-2 focus:ring-white outline-none transition-all" value="0.00" step="0.01">
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-box rounded-xl p-5 flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-12">
+                <div class="flex items-center gap-3 w-full md:w-1/2">
+                    <span class="text-sm font-bold text-blue-900">% Increase:</span>
+                    <span id="link-increase" class="font-bold text-gray-900 text-lg">--</span>
+                </div>
+                <div class="hidden md:block w-px h-6 bg-blue-300"></div>
+                <div class="flex items-center gap-3 w-full md:w-1/2">
+                    <span class="text-sm font-bold text-blue-900">$ Expected Profit:</span>
+                    <span id="link-profit" class="font-bold text-gray-900 text-lg">--</span>
+                </div>
+            </div>
+            <p class="mt-4 text-center text-xs font-medium text-blue-100 opacity-75">insert numbers without comma in the box</p>
+        </div>
+
+    </div>
+
+    <script>
+        const coins = ['btc', 'eth', 'sol', 'hype', 'link'];
+
+        function resetCard(coin) {
+            const initial = document.getElementById(`${coin}-initial`);
+            const target = document.getElementById(`${coin}-target`);
+            const investment = document.getElementById(`${coin}-investment`);
+            
+            if (initial && target && investment) {
+                // Reset to 0
+                initial.value = '0.00';
+                target.value = '0.00';
+                investment.value = '0.00';
+                
+                // Triggers the auto-calculate function to clear the outputs
+                initial.dispatchEvent(new Event('input'));
+            }
+        }
+
+        function highlightCard(coin) {
+            const highlightColors = {
+                btc: '#F7931A',
+                eth: '#60a5fa', 
+                sol: '#4ade80',
+                hype: '#97FCE4',
+                link: '#2A5ADA'
+            };
+            
+            // Reset all cards to their default state
+            coins.forEach(c => {
+                const card = document.getElementById(`card-${c}`);
+                if (card) {
+                    card.style.boxShadow = ''; 
+                    card.style.transform = 'scale(1)';
+                    card.style.zIndex = '1';
+                }
+            });
+
+            // Highlight the selected card and smoothly scroll it into view
+            const selectedCard = document.getElementById(`card-${coin}`);
+            if (selectedCard) {
+                selectedCard.style.boxShadow = `0 0 0 5px #d2d6db, 0 0 0 9px ${highlightColors[coin]}, 0 20px 25px -5px rgba(0,0,0,0.15)`;
+                selectedCard.style.transform = 'scale(1.02)';
+                selectedCard.style.zIndex = '10';
+                
+                selectedCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        coins.forEach(coin => {
+            const initialInput = document.getElementById(`${coin}-initial`);
+            const targetInput = document.getElementById(`${coin}-target`);
+            const investmentInput = document.getElementById(`${coin}-investment`);
+            const increaseOutput = document.getElementById(`${coin}-increase`);
+            const profitOutput = document.getElementById(`${coin}-profit`);
+
+            function calculate() {
+                const initial = parseFloat(initialInput.value);
+                const target = parseFloat(targetInput.value);
+                const investment = parseFloat(investmentInput.value);
+
+                if (initial > 0 && target >= 0 && investment >= 0) {
+                    const increase = ((target - initial) / initial) * 100;
+                    const profit = investment * (increase / 100);
+
+                    increaseOutput.textContent = (increase > 0 ? '+' : '') + increase.toFixed(2) + '%';
+                    profitOutput.textContent = (profit >= 0 ? '$' : '-$') + Math.abs(profit).toFixed(2);
+                    
+                    // Style logic for positive/negative results
+                    if (coin === 'sol') {
+                        increaseOutput.className = increase >= 0 ? 'font-bold text-emerald-950 text-lg' : 'font-bold text-red-800 text-lg';
+                        profitOutput.className = profit >= 0 ? 'font-bold text-emerald-950 text-lg' : 'font-bold text-red-800 text-lg';
+                    } else {
+                        increaseOutput.className = increase >= 0 ? 'font-bold text-green-700 text-lg' : 'font-bold text-red-600 text-lg';
+                        profitOutput.className = profit >= 0 ? 'font-bold text-green-700 text-lg' : 'font-bold text-red-600 text-lg';
+                    }
+                } else {
+                    increaseOutput.textContent = '--';
+                    profitOutput.textContent = '--';
+                    increaseOutput.className = 'font-bold text-gray-900 text-lg';
+                    profitOutput.className = 'font-bold text-gray-900 text-lg';
+                }
+            }
+
+            ['input', 'change'].forEach(evt => {
+                initialInput.addEventListener(evt, calculate);
+                targetInput.addEventListener(evt, calculate);
+                investmentInput.addEventListener(evt, calculate);
+            });
+        });
+    </script>
+</body>
+</html>
