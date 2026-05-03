@@ -202,6 +202,7 @@
         </div>
 
         <div id="calculator-containers" class="space-y-6 pb-20">
+            
             <!-- BTC Card -->
             <div id="card-btc" class="crypto-card rounded-2xl p-6 md:p-8 transition-all duration-300 relative" style="background-color: #F7931A;">
                 <div class="flex flex-wrap md:flex-nowrap justify-between items-center mb-6 gap-4">
@@ -331,7 +332,7 @@
                 </div>
             </div>
 
-            <!-- USD/INR Card -->
+            <!-- FIAT Card -->
             <div id="card-fiat" class="crypto-card rounded-2xl p-6 md:p-8 transition-all duration-300 relative" style="background-color: #475569;">
                 <div class="flex flex-wrap md:flex-nowrap justify-between items-center mb-6 gap-4">
                     <h2 class="text-xl font-bold text-white flex items-center gap-2 md:w-1/4"><i class="fa-solid fa-money-bill-transfer text-slate-300"></i> USD / INR</h2>
@@ -733,7 +734,6 @@
                 if (id === 'hype') {
                     p = 39.36 + (Math.random() * 1.5 - 0.75);
                 } else { 
-                    // Using Coinbase API to bypass Binance ISP blockades
                     const r = await fetch(`https://api.coinbase.com/v2/prices/${symbol}/spot`); 
                     if (!r.ok) throw new Error('API Rate Limit');
                     const d = await r.json(); 
@@ -916,7 +916,6 @@
             addDCAEntry(); 
             calculateDCA();
             
-            // Add listener to the container once
             container.removeEventListener('input', dcaInputHandler);
             container.addEventListener('input', dcaInputHandler);
         }
@@ -925,13 +924,11 @@
             if(e.target.tagName === 'INPUT') {
                 const clean = e.target.value.replace(/,/g, '');
                 if(!isNaN(clean) && clean !== "") {
-                    // Temporarily store cursor position to prevent jumping
                     const pos = e.target.selectionStart;
                     const oldLen = e.target.value.length;
                     
                     e.target.value = parseFloat(clean).toLocaleString('en-US');
                     
-                    // Adjust cursor position based on added/removed commas
                     const newLen = e.target.value.length;
                     e.target.setSelectionRange(pos + (newLen - oldLen), pos + (newLen - oldLen));
                 }
@@ -939,7 +936,6 @@
             calculateDCA();
         }
         
-        // Expose remove function globally for inline onclick
         window.removeDCAEntry = function(btn) {
             const entry = btn.closest('.dca-entry');
             if(entry) {
