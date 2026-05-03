@@ -202,7 +202,6 @@
         </div>
 
         <div id="calculator-containers" class="space-y-6 pb-20">
-            
             <!-- BTC Card -->
             <div id="card-btc" class="crypto-card rounded-2xl p-6 md:p-8 transition-all duration-300 relative" style="background-color: #F7931A;">
                 <div class="flex flex-wrap md:flex-nowrap justify-between items-center mb-6 gap-4">
@@ -332,7 +331,7 @@
                 </div>
             </div>
 
-            <!-- FIAT Card -->
+            <!-- USD/INR Card -->
             <div id="card-fiat" class="crypto-card rounded-2xl p-6 md:p-8 transition-all duration-300 relative" style="background-color: #475569;">
                 <div class="flex flex-wrap md:flex-nowrap justify-between items-center mb-6 gap-4">
                     <h2 class="text-xl font-bold text-white flex items-center gap-2 md:w-1/4"><i class="fa-solid fa-money-bill-transfer text-slate-300"></i> USD / INR</h2>
@@ -541,7 +540,7 @@
             const day = dayEl.value;
             const month = monthEl.value;
             const year = yearEl.value;
-            const dateParam = `${day}-${month}-${year}`;
+            
             const statusEl = document.getElementById('wi-hist-price');
             
             if(statusEl) {
@@ -550,7 +549,8 @@
             }
 
             try {
-                const selectedDate = new Date(`${year}-${month}-${day}`);
+                // Check if future date or today
+                const selectedDate = new Date(`${year}-${month}-${day}T00:00:00`);
                 const now = new Date();
                 
                 if (selectedDate > now) {
@@ -563,26 +563,41 @@
                     return;
                 }
 
-                const res = await fetch(`https://api.coingecko.com/api/v3/coins/bitcoin/history?date=${dateParam}&localization=false`);
-                
-                if (!res.ok) {
-                    if(statusEl) {
-                        statusEl.textContent = "ERROR (API LIMIT)";
-                        statusEl.className = "text-red-500 font-black text-[9px]";
+                let fetchedPrice = 0;
+
+                // API 1: Coinbase (Format YYYY-MM-DD)
+                try {
+                    const dateParam = `${year}-${month}-${day}`;
+                    const res = await fetch(`https://api.coinbase.com/v2/prices/BTC-USD/spot?date=${dateParam}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && data.data && data.data.amount) {
+                            fetchedPrice = parseFloat(data.data.amount);
+                        }
                     }
-                    historicalPriceBtc = 0;
-                    runSimulation();
-                    return;
+                } catch(e) { console.log('Coinbase API skipped'); }
+
+                // API 2: CryptoCompare (Fallback)
+                if (!fetchedPrice || fetchedPrice <= 0) {
+                    try {
+                        const unixTime = Math.floor(new Date(`${year}-${month}-${day}T12:00:00Z`).getTime() / 1000);
+                        const fallbackRes = await fetch(`https://min-api.cryptocompare.com/data/pricehistorical?fsym=BTC&tsyms=USD&ts=${unixTime}`);
+                        if (fallbackRes.ok) {
+                            const fbData = await fallbackRes.json();
+                            if (fbData && fbData.BTC && fbData.BTC.USD) {
+                                fetchedPrice = parseFloat(fbData.BTC.USD);
+                            }
+                        }
+                    } catch(e) { console.log('CryptoCompare API skipped'); }
                 }
 
-                const data = await res.json();
-                if (data && data.market_data) {
-                    historicalPriceBtc = data.market_data.current_price.usd;
+                if (fetchedPrice > 0) {
+                    historicalPriceBtc = fetchedPrice;
                     if(statusEl) {
                         statusEl.textContent = `$${historicalPriceBtc.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
                         statusEl.className = "text-white font-black";
                     }
-                } else if (parseInt(year) < 2013) {
+                } else if (parseInt(year) < 2013 || (parseInt(year) === 2013 && parseInt(month) < 4)) {
                     if(statusEl) {
                         statusEl.textContent = "Before BTC Trading";
                         statusEl.className = "text-red-500 font-black text-[9px]";
@@ -595,6 +610,7 @@
                     }
                     historicalPriceBtc = 13.50; 
                 }
+                
                 runSimulation();
             } catch (e) { 
                 if(statusEl) {
@@ -734,6 +750,7 @@
                 if (id === 'hype') {
                     p = 39.36 + (Math.random() * 1.5 - 0.75);
                 } else { 
+                    // Using Coinbase API to bypass Binance ISP blockades
                     const r = await fetch(`https://api.coinbase.com/v2/prices/${symbol}/spot`); 
                     if (!r.ok) throw new Error('API Rate Limit');
                     const d = await r.json(); 
